@@ -4,6 +4,7 @@
  *
  * Contas (usuário / senha) — SÓ PARA DESENVOLVIMENTO:
  *   professor / professor123
+ *   carla     / carla123     (outra professora, sem mundos — testa o isolamento)
  *   aluno     / aluno123     (matriculado no Mundo Inicial)
  *   maria     / maria123     (matriculada no Mundo Inicial)
  *   joao      / joao123      (sem mundo — para testar o acesso)
@@ -15,12 +16,18 @@ import { prisma } from "./db.js";
 import type { TaskType } from "./generated/prisma/client.js";
 import { hashPassword } from "./modules/auth/password.js";
 
-async function upsertUser(username: string, name: string, password: string, role: "STUDENT" | "TEACHER" = "STUDENT") {
+async function upsertUser(
+  username: string,
+  name: string,
+  password: string,
+  role: "STUDENT" | "TEACHER" = "STUDENT",
+  createdById?: string,
+) {
   const passwordHash = await hashPassword(password);
   return prisma.user.upsert({
     where: { username },
-    update: { passwordHash },
-    create: { username, name, passwordHash, role },
+    update: { passwordHash, createdById },
+    create: { username, name, passwordHash, role, createdById },
   });
 }
 
@@ -94,9 +101,10 @@ const NPCS: SeedNpc[] = [
 
 async function main() {
   const teacher = await upsertUser("professor", "Professor", "professor123", "TEACHER");
-  const student = await upsertUser("aluno", "Aluno Exemplo", "aluno123");
-  const maria = await upsertUser("maria", "Maria", "maria123");
-  await upsertUser("joao", "João", "joao123");
+  await upsertUser("carla", "Professora Carla", "carla123", "TEACHER");
+  const student = await upsertUser("aluno", "Aluno Exemplo", "aluno123", "STUDENT", teacher.id);
+  const maria = await upsertUser("maria", "Maria", "maria123", "STUDENT", teacher.id);
+  await upsertUser("joao", "João", "joao123", "STUDENT", teacher.id);
 
   const world =
     (await prisma.world.findFirst({ where: { name: "Mundo Inicial" } })) ??

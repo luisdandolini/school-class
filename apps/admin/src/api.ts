@@ -1,0 +1,66 @@
+import type {
+  AdminStudent,
+  AdminWorld,
+  AuthUser,
+  BulkCreateStudentsRequest,
+  CreateStudentRequest,
+  LoginRequest,
+  StudentCredentials,
+  UpdateStudentRequest,
+} from "@school-class/shared";
+
+export class ApiError extends Error {
+  constructor(
+    readonly status: number,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
+async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const res = await fetch(`/api${path}`, {
+    method,
+    headers: body !== undefined ? { "content-type": "application/json" } : undefined,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  if (res.status === 204) return undefined as T;
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new ApiError(res.status, (data as { error?: string }).error ?? `Erro ${res.status}`);
+  return data as T;
+}
+
+/** Mensagem amigável para mostrar ao professor. */
+export function errorMessage(err: unknown): string {
+  if (err instanceof ApiError) return err.message;
+  return "Não foi possível conectar ao servidor. Tente novamente.";
+}
+
+export const api = {
+  login: (data: LoginRequest) => request<AuthUser>("POST", "/auth/login", data),
+  logout: () => request<{ ok: true }>("POST", "/auth/logout"),
+  me: async () => {
+    try {
+      return await request<AuthUser>("GET", "/auth/me");
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) return null;
+      throw err;
+    }
+  },
+
+  students: (worldId?: string) =>
+    request<AdminStudent[]>("GET", `/admin/students${worldId ? `?worldId=${encodeURIComponent(worldId)}` : ""}`),
+  createStudent: (data: CreateStudentRequest) => request<StudentCredentials>("POST", "/admin/students", data),
+  createStudentsBulk: (data: BulkCreateStudentsRequest) =>
+    request<StudentCredentials[]>("POST", "/admin/students/bulk", data),
+  updateStudent: (id: string, data: UpdateStudentRequest) =>
+    request<AdminStudent>("PATCH", `/admin/students/${id}`, data),
+  resetPassword: (id: string) => request<StudentCredentials>("POST", `/admin/students/${id}/reset-password`),
+  deleteStudent: (id: string) => request<void>("DELETE", `/admin/students/${id}`),
+
+  worlds: () => request<AdminWorld[]>("GET", "/admin/worlds"),
+  enroll: (worldId: string, studentIds: string[]) =>
+    request<void>("POST", `/admin/worlds/${worldId}/students`, { studentIds }),
+  unenroll: (worldId: string, studentId: string) =>
+    request<void>("DELETE", `/admin/worlds/${worldId}/students/${studentId}`),
+};

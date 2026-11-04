@@ -28,7 +28,7 @@ services:
   nginx:
     build:
       context: .
-      dockerfile: apps/game/Dockerfile
+      dockerfile: docker/web.Dockerfile
     restart: unless-stopped
     ports:
       - "80:80"

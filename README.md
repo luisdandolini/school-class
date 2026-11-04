@@ -8,10 +8,10 @@ Jogo educacional 2D (top-down) onde alunos exploram mundos temáticos, conversam
 apps/
   backend/      API (Fastify) + futuro servidor de jogo (Colyseus) + Prisma
   game/         Jogo em Phaser 3 (Vite + TypeScript)
-  admin/        Painel do professor (React) (futuro)
+  admin/        Painel do professor (React + Vite), servido em /admin
 packages/
   shared/       Tipos e regras comuns (tarefas, mundos, cálculo de nível)
-docker/         Configuração do Nginx
+docker/         Nginx e Dockerfile web (jogo + painel)
 ```
 
 - **O servidor é a autoridade:** o jogo nunca recebe as respostas certas; o backend corrige e concede XP.
@@ -35,7 +35,8 @@ pnpm --filter @school-class/backend db:seed  # dados de exemplo
 pnpm dev                                     # backend + jogo juntos
 ```
 
-Abra **http://localhost:5173** para jogar. Controles: setas/WASD para andar, Espaço (ou E) para conversar.
+- **Jogo:** http://localhost:5173 — setas/WASD para andar, Espaço (ou E) para conversar.
+- **Painel do professor:** http://localhost:5174/admin — entre com uma conta de professor.
 
 ### Contas de teste (criadas pelo seed — só para desenvolvimento)
 
@@ -45,8 +46,9 @@ Abra **http://localhost:5173** para jogar. Controles: setas/WASD para andar, Esp
 | `maria` | `maria123` | Aluna, no Mundo Inicial |
 | `joao` | `joao123` | Aluno sem mundo (testa o acesso) |
 | `professor` | `professor123` | Professor, dono do Mundo Inicial |
+| `carla` | `carla123` | Outra professora, sem mundos (testa o isolamento) |
 
-Também dá para rodar separado: `pnpm dev:backend` (porta 3000) e `pnpm dev:game` (porta 5173, com proxy de `/api` para o backend).
+Também dá para rodar separado: `pnpm dev:backend` (porta 3000), `pnpm dev:game` (porta 5173) e `pnpm dev:admin` (porta 5174). Jogo e painel fazem proxy de `/api` para o backend.
 
 Outros comandos úteis:
 
@@ -55,6 +57,17 @@ pnpm --filter @school-class/backend db:studio   # interface visual do banco
 pnpm typecheck                                   # checa tipos de todo o monorepo
 pnpm dev:db:down                                 # para o banco
 ```
+
+## Painel do professor
+
+Em `/admin` (só contas de professor):
+
+- **Alunos:** cadastrar um a um ou a **turma inteira** colando a lista de nomes; usuários (`ana.souza`) e senhas fáceis de digitar (`gatonuvem47`) são gerados automaticamente. Editar, gerar nova senha e excluir.
+- **Cartões de acesso:** após cadastrar ou gerar nova senha, dá para copiar ou **imprimir cartões** com usuário e senha para recortar e entregar. As senhas só aparecem nesse momento.
+- **Mundos:** ver os mundos, matricular e remover alunos.
+- Cada professor só vê os alunos que cadastrou ou que estão nos mundos dele; só quem cadastrou pode excluir.
+
+Rotas: `/api/admin/students` (GET, POST), `/api/admin/students/bulk`, `/api/admin/students/:id` (PATCH, DELETE), `/api/admin/students/:id/reset-password`, `/api/admin/worlds`, `/api/admin/worlds/:id/students` (POST, DELETE).
 
 ## Tarefas e XP
 
@@ -78,7 +91,7 @@ Rotas: `GET /api/npcs/:id/tasks` e `POST /api/tasks/:id/submit`.
 ## Testes
 
 ```bash
-pnpm --filter @school-class/backend test   # testes da correção automática (Vitest)
+pnpm test        # testes automatizados (Vitest): correção, geração de usuários e senhas
 pnpm typecheck
 ```
 
@@ -98,7 +111,7 @@ cp .env.example .env   # ajuste senhas, JWT_SECRET (16+ caracteres) e COOKIE_SEC
 docker compose up -d --build
 ```
 
-Acesse `http://localhost` (jogo) e `http://localhost/api/health` (API). As migrations são aplicadas automaticamente ao subir o backend.
+Acesse `http://localhost` (jogo), `http://localhost/admin` (painel) e `http://localhost/api/health` (API). As migrations são aplicadas automaticamente ao subir o backend.
 
 > Com HTTPS (recomendado em produção), defina `COOKIE_SECURE=true` para o cookie de sessão só trafegar por conexão segura.
 
