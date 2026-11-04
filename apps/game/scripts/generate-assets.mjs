@@ -487,3 +487,10 @@ buildCharacter("npc", {
   pants: [112, 56, 152],
   shoes: [72, 40, 92],
 });
+buildCharacter("npc-mestre", {
+  hair: [40, 36, 44],
+  skin: [196, 140, 100],
+  shirt: [56, 142, 92],
+  pants: [70, 58, 46],
+  shoes: [48, 36, 28],
+});

@@ -1,14 +1,16 @@
 import Phaser from "phaser";
-import type { AuthUser } from "@school-class/shared";
+import type { AuthUser, TaskResult } from "@school-class/shared";
 import { logout } from "../auth/login";
 import { FONT } from "../config";
 import { DialogBox } from "../ui/DialogBox";
 import { Hud } from "../ui/Hud";
+import { TaskPanel } from "../ui/TaskPanel";
 
 /** Interface por cima do mundo (sem zoom): jogador, nome do mundo, dicas e diálogo. */
 export class UIScene extends Phaser.Scene {
   dialog!: DialogBox;
   hud!: Hud;
+  readonly taskPanel = new TaskPanel();
   private controlsHint!: Phaser.GameObjects.Text;
 
   constructor() {
@@ -48,6 +50,37 @@ export class UIScene extends Phaser.Scene {
       .setAlpha(0.8);
 
     this.dialog = new DialogBox(this);
+  }
+
+  /** Aplica o resultado de uma resposta: atualiza o HUD e comemora a subida de nível. */
+  applyResult(result: TaskResult) {
+    this.registry.set("user", result.user);
+    this.hud.setUser(result.user);
+    if (result.leveledUp) {
+      this.time.delayedCall(900, () => this.toast(`⭐ Subiu para o nível ${result.user.level}!`));
+    }
+  }
+
+  /** Aviso grande e temporário no centro da tela. */
+  toast(message: string) {
+    const { width, height } = this.scale;
+    const t = this.add
+      .text(width / 2, height * 0.3, message, {
+        fontFamily: FONT, fontSize: "40px", fontStyle: "bold", color: "#1b1f2a",
+        backgroundColor: "#f6d55c", padding: { x: 28, y: 16 },
+      })
+      .setOrigin(0.5)
+      .setScale(0.4)
+      .setAlpha(0)
+      .setDepth(1000);
+    this.tweens.chain({
+      targets: t,
+      tweens: [
+        { scale: 1, alpha: 1, duration: 300, ease: "Back.out" },
+        { scale: 1, duration: 1800 },
+        { alpha: 0, y: t.y - 30, duration: 400, onComplete: () => t.destroy() },
+      ],
+    });
   }
 
   update() {

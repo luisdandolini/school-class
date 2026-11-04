@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { api, ApiError } from "../api/client";
-import { FONT } from "../config";
+import { CHARACTER_SPRITES, FONT } from "../config";
 import { createCharacterAnims } from "../entities/animations";
 import { logout } from "../auth/login";
 
@@ -12,13 +12,13 @@ export class BootScene extends Phaser.Scene {
 
   preload() {
     this.load.image("tiles", "assets/tiles.png");
-    this.load.spritesheet("player", "assets/player.png", { frameWidth: 16, frameHeight: 16 });
-    this.load.spritesheet("npc", "assets/npc.png", { frameWidth: 16, frameHeight: 16 });
+    for (const key of CHARACTER_SPRITES) {
+      this.load.spritesheet(key, `assets/${key}.png`, { frameWidth: 16, frameHeight: 16 });
+    }
   }
 
   async create() {
-    createCharacterAnims(this, "player");
-    createCharacterAnims(this, "npc");
+    for (const key of CHARACTER_SPRITES) createCharacterAnims(this, key);
 
     const { width, height } = this.scale;
     const status = this.add

@@ -1,3 +1,5 @@
+import type { AuthUser } from "./auth.js";
+
 /** Tipos de tarefa que um NPC pode passar ao aluno. */
 export type TaskType = "MULTIPLE_CHOICE" | "TRUE_FALSE" | "FILL_BLANK" | "OPEN";
 
@@ -11,24 +13,45 @@ export interface PublicTask {
   type: TaskType;
   prompt: string;
   /** Alternativas (apenas para MULTIPLE_CHOICE). */
-  options?: string[];
+  options: string[];
   xpReward: number;
   order: number;
 }
 
+/**
+ * Situação de uma tarefa para o aluno logado:
+ * - AVAILABLE: pode responder
+ * - PENDING_REVIEW: resposta aberta enviada, aguardando o professor
+ * - COMPLETED: concluída (XP já ganho)
+ */
+export type TaskStatus = "AVAILABLE" | "PENDING_REVIEW" | "COMPLETED";
+
+export interface NpcTask extends PublicTask {
+  status: TaskStatus;
+}
+
+/** Valores enviados para tarefas TRUE_FALSE. */
+export const TRUE_FALSE_VALUES = { true: "true", false: "false" } as const;
+
 /** O que o aluno envia ao responder uma tarefa. */
 export interface TaskAnswer {
-  taskId: string;
   answer: string;
 }
 
-/** Resultado devolvido pelo backend após corrigir. */
+/**
+ * Resultado da correção:
+ * - CORRECT: acertou (ganhou XP)
+ * - WRONG: errou (pode tentar de novo)
+ * - PENDING_REVIEW: resposta aberta enviada para o professor
+ * - ALREADY_COMPLETED: já tinha concluído antes (sem XP extra)
+ */
+export type TaskOutcome = "CORRECT" | "WRONG" | "PENDING_REVIEW" | "ALREADY_COMPLETED";
+
 export interface TaskResult {
   taskId: string;
-  /** null = resposta aberta aguardando correção do professor. */
-  correct: boolean | null;
+  outcome: TaskOutcome;
   xpGained: number;
-  totalXp: number;
-  level: number;
   leveledUp: boolean;
+  /** Usuário atualizado (XP e nível), para o HUD. */
+  user: AuthUser;
 }

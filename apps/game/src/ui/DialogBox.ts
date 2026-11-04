@@ -20,6 +20,7 @@ export class DialogBox extends Phaser.GameObjects.Container {
   private visibleChars = 0;
   private typing = false;
   private timer?: Phaser.Time.TimerEvent;
+  private onClose?: () => void;
 
   constructor(scene: Phaser.Scene) {
     const { width, height } = scene.scale;
@@ -54,12 +55,14 @@ export class DialogBox extends Phaser.GameObjects.Container {
     return this.visible;
   }
 
-  open(name: string, lines: string[]) {
+  /** Abre o diálogo. A Promise termina quando o jogador passar a última fala. */
+  open(name: string, lines: string[]): Promise<void> {
     this.nameTag.setText(name);
     this.lines = lines;
     this.index = 0;
     this.setVisible(true);
     this.showLine();
+    return new Promise((resolve) => (this.onClose = resolve));
   }
 
   /** Avança o diálogo. Retorna false quando o diálogo terminou e fechou. */
@@ -81,6 +84,9 @@ export class DialogBox extends Phaser.GameObjects.Container {
     this.timer?.remove();
     this.typing = false;
     this.setVisible(false);
+    const done = this.onClose;
+    this.onClose = undefined;
+    done?.();
   }
 
   private showLine() {

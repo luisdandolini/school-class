@@ -12,6 +12,7 @@
     "dev:backend": "pnpm --filter @school-class/backend dev",
     "dev:game": "pnpm --filter @school-class/game dev",
     "build": "pnpm -r build",
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r --if-present test"
   }
 }

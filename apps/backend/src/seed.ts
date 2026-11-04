@@ -1,5 +1,6 @@
 /**
- * Dados de exemplo: 1 professor, 3 alunos, 1 mundo, 1 NPC com 3 tarefas.
+ * Dados de exemplo: 1 professor, 3 alunos, 1 mundo e 2 NPCs com tarefas.
+ * Pode rodar várias vezes: só cria o que ainda não existe.
  *
  * Contas (usuário / senha) — SÓ PARA DESENVOLVIMENTO:
  *   professor / professor123
@@ -11,6 +12,7 @@
  * Produção: docker compose exec backend node dist/seed.js
  */
 import { prisma } from "./db.js";
+import type { TaskType } from "./generated/prisma/client.js";
 import { hashPassword } from "./modules/auth/password.js";
 
 async function upsertUser(username: string, name: string, password: string, role: "STUDENT" | "TEACHER" = "STUDENT") {
@@ -22,69 +24,121 @@ async function upsertUser(username: string, name: string, password: string, role
   });
 }
 
+interface SeedTask {
+  type: TaskType;
+  prompt: string;
+  options?: string[];
+  answer?: string;
+  xpReward: number;
+}
+
+interface SeedNpc {
+  name: string;
+  greeting: string;
+  sprite: string;
+  x: number;
+  y: number;
+  tasks: SeedTask[];
+}
+
+const NPCS: SeedNpc[] = [
+  {
+    name: "Sábia Ana",
+    greeting: "Olá, aventureiro! Responda meus desafios para ganhar XP.",
+    sprite: "npc",
+    x: 10,
+    y: 8,
+    tasks: [
+      {
+        type: "MULTIPLE_CHOICE",
+        prompt: "Qual é a capital do Brasil?",
+        options: ["São Paulo", "Rio de Janeiro", "Brasília", "Salvador"],
+        answer: "Brasília",
+        xpReward: 20,
+      },
+      { type: "TRUE_FALSE", prompt: "A água ferve a 100 °C ao nível do mar.", answer: "true", xpReward: 10 },
+      { type: "FILL_BLANK", prompt: "7 x 8 = ___", answer: "56|cinquenta e seis", xpReward: 15 },
+      {
+        type: "OPEN",
+        prompt: "Em uma frase: por que é importante cuidar da natureza?",
+        xpReward: 25,
+      },
+    ],
+  },
+  {
+    name: "Mestre Leo",
+    greeting: "Bem-vindo à minha casa! Gosto de números. Vamos treinar?",
+    sprite: "npc-mestre",
+    x: 23,
+    y: 8,
+    tasks: [
+      {
+        type: "MULTIPLE_CHOICE",
+        prompt: "Quanto é 15 + 27?",
+        options: ["32", "42", "52", "41"],
+        answer: "42",
+        xpReward: 15,
+      },
+      { type: "TRUE_FALSE", prompt: "Todo número par é divisível por 2.", answer: "true", xpReward: 10 },
+      { type: "FILL_BLANK", prompt: "A metade de 50 é ___", answer: "25|vinte e cinco", xpReward: 15 },
+      {
+        type: "MULTIPLE_CHOICE",
+        prompt: "Qual destes é um número primo?",
+        options: ["9", "15", "17", "21"],
+        answer: "17",
+        xpReward: 30,
+      },
+    ],
+  },
+];
+
 async function main() {
   const teacher = await upsertUser("professor", "Professor", "professor123", "TEACHER");
   const student = await upsertUser("aluno", "Aluno Exemplo", "aluno123");
   const maria = await upsertUser("maria", "Maria", "maria123");
   await upsertUser("joao", "João", "joao123");
 
-  const existing = await prisma.world.findFirst({ where: { name: "Mundo Inicial" } });
-  if (existing) {
-    // Mundo já existe: só garante as matrículas.
-    for (const userId of [student.id, maria.id]) {
-      await prisma.enrollment.upsert({
-        where: { userId_worldId: { userId, worldId: existing.id } },
-        update: {},
-        create: { userId, worldId: existing.id },
-      });
-    }
-    console.log("Seed já aplicado (usuários e matrículas atualizados).");
-    return;
+  const world =
+    (await prisma.world.findFirst({ where: { name: "Mundo Inicial" } })) ??
+    (await prisma.world.create({
+      data: {
+        name: "Mundo Inicial",
+        description: "Um mundo de boas-vindas para conhecer o jogo.",
+        mapKey: "starter",
+        ownerId: teacher.id,
+      },
+    }));
+
+  for (const userId of [student.id, maria.id]) {
+    await prisma.enrollment.upsert({
+      where: { userId_worldId: { userId, worldId: world.id } },
+      update: {},
+      create: { userId, worldId: world.id },
+    });
   }
 
-  await prisma.world.create({
-    data: {
-      name: "Mundo Inicial",
-      description: "Um mundo de boas-vindas para conhecer o jogo.",
-      mapKey: "starter",
-      ownerId: teacher.id,
-      enrollments: { create: [{ userId: student.id }, { userId: maria.id }] },
-      npcs: {
-        create: {
-          name: "Sábia Ana",
-          greeting: "Olá, aventureiro! Responda meus desafios para ganhar XP.",
-          x: 10,
-          y: 8,
-          tasks: {
-            create: [
-              {
-                type: "MULTIPLE_CHOICE",
-                prompt: "Qual é a capital do Brasil?",
-                options: ["São Paulo", "Rio de Janeiro", "Brasília", "Salvador"],
-                answer: "Brasília",
-                xpReward: 20,
-                order: 1,
-              },
-              {
-                type: "TRUE_FALSE",
-                prompt: "A água ferve a 100 °C ao nível do mar.",
-                answer: "true",
-                xpReward: 10,
-                order: 2,
-              },
-              {
-                type: "FILL_BLANK",
-                prompt: "7 x 8 = ___",
-                answer: "56",
-                xpReward: 15,
-                order: 3,
-              },
-            ],
-          },
-        },
-      },
-    },
-  });
+  for (const n of NPCS) {
+    const { tasks, ...npcData } = n;
+    const npc =
+      (await prisma.npc.findFirst({ where: { worldId: world.id, name: n.name } })) ??
+      (await prisma.npc.create({ data: { ...npcData, worldId: world.id } }));
+    // Mantém posição/fala/sprite atualizados com o seed.
+    await prisma.npc.update({ where: { id: npc.id }, data: npcData });
+
+    for (const [i, t] of tasks.entries()) {
+      const order = i + 1;
+      const data = {
+        type: t.type,
+        prompt: t.prompt,
+        options: t.options ?? [],
+        answer: t.answer ?? null,
+        xpReward: t.xpReward,
+      };
+      const existing = await prisma.task.findFirst({ where: { npcId: npc.id, order } });
+      if (existing) await prisma.task.update({ where: { id: existing.id }, data });
+      else await prisma.task.create({ data: { ...data, npcId: npc.id, order } });
+    }
+  }
 
   console.log("Seed aplicado com sucesso.");
 }

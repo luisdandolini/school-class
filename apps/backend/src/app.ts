@@ -5,6 +5,7 @@ import { ZodError } from "zod";
 import authPlugin from "./plugins/auth.js";
 import { authRoutes } from "./modules/auth/auth.routes.js";
 import { healthRoutes } from "./modules/health/health.routes.js";
+import { taskRoutes } from "./modules/tasks/tasks.routes.js";
 import { worldRoutes } from "./modules/worlds/worlds.routes.js";
 
 export async function buildApp() {
@@ -34,6 +35,7 @@ export async function buildApp() {
       await api.register(healthRoutes);
       await api.register(authRoutes);
       await api.register(worldRoutes);
+      await api.register(taskRoutes);
     },
     { prefix: "/api" },
   );

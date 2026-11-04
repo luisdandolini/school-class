@@ -31,6 +31,7 @@ model User {
 
   enrollments Enrollment[]
   submissions Submission[]
+  completions TaskCompletion[]
   worldsOwned World[]      @relation("WorldOwner")
 }
 
@@ -81,12 +82,16 @@ model Task {
   /// Alternativas (MULTIPLE_CHOICE).
   options  String[]
   /// Resposta correta. NUNCA é enviada ao jogo. Null para OPEN.
+  /// FILL_BLANK aceita várias respostas separadas por "|" (ex.: "56|cinquenta e seis").
   answer   String?
   xpReward Int      @default(10)
   order    Int      @default(0)
 
-  npc         Npc          @relation(fields: [npcId], references: [id], onDelete: Cascade)
+  npc         Npc              @relation(fields: [npcId], references: [id], onDelete: Cascade)
   submissions Submission[]
+  completions TaskCompletion[]
+
+  @@index([npcId, order])
 }
 
 /// Cada resposta enviada por um aluno.
@@ -104,4 +109,18 @@ model Submission {
   task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
   @@index([userId, taskId])
+}
+
+/// Tarefa concluída por um aluno. A chave (userId, taskId) garante que o XP
+/// de cada tarefa seja concedido uma única vez, mesmo com envios simultâneos.
+model TaskCompletion {
+  userId      String
+  taskId      String
+  xpGained    Int
+  completedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@id([userId, taskId])
 }

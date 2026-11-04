@@ -18,7 +18,18 @@ export interface PublicNpc {
   y: number;
 }
 
-/** Resposta de GET /api/worlds/:id — o mundo com seus NPCs. */
+/** Progresso do aluno nas tarefas de um NPC (para os marcadores "!" e "✓"). */
+export interface NpcProgress {
+  total: number;
+  completed: number;
+  pendingReview: number;
+}
+
+export interface NpcWithProgress extends PublicNpc {
+  progress: NpcProgress;
+}
+
+/** Resposta de GET /api/worlds/:id — o mundo com seus NPCs e o progresso do aluno. */
 export interface WorldDetail extends PublicWorld {
-  npcs: PublicNpc[];
+  npcs: NpcWithProgress[];
 }

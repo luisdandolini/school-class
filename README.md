@@ -56,6 +56,32 @@ pnpm typecheck                                   # checa tipos de todo o monorep
 pnpm dev:db:down                                 # para o banco
 ```
 
+## Tarefas e XP
+
+Ao conversar com um NPC, o aluno recebe os desafios dele, um por vez:
+
+| Tipo | Como o aluno responde | Correção |
+|---|---|---|
+| `MULTIPLE_CHOICE` | escolhe uma alternativa (teclas 1–4) | automática |
+| `TRUE_FALSE` | Verdadeiro ou Falso | automática (`answer` = `true`/`false`) |
+| `FILL_BLANK` | digita a resposta | automática; várias respostas aceitas com `\|` (ex.: `56\|cinquenta e seis`) |
+| `OPEN` | escreve um texto livre | pelo professor (painel, em breve) |
+
+- A correção ignora maiúsculas, acentos, espaços extras e pontuação final.
+- **O jogo nunca recebe a resposta certa** — o backend corrige.
+- Cada tarefa dá XP **uma única vez** (garantido pelo banco, mesmo com envios simultâneos).
+- Respostas erradas ficam registradas (para relatórios do professor) e o aluno pode tentar de novo.
+- Marcadores sobre os NPCs: **!** desafio disponível · **…** aguardando o professor · **✓** tudo concluído.
+
+Rotas: `GET /api/npcs/:id/tasks` e `POST /api/tasks/:id/submit`.
+
+## Testes
+
+```bash
+pnpm --filter @school-class/backend test   # testes da correção automática (Vitest)
+pnpm typecheck
+```
+
 ## Autenticação
 
 - Contas são criadas pelo professor (usuário + senha, sem e-mail).

@@ -8,6 +8,9 @@ export const PLAYER_SPEED = 80;
 /** Distância (em pixels do mundo) para poder conversar com um NPC. */
 export const INTERACT_DISTANCE = 22;
 
+/** Spritesheets de personagens (public/assets/<nome>.png, 3 quadros x 4 direções). */
+export const CHARACTER_SPRITES = ["player", "npc", "npc-mestre"] as const;
+
 export const FONT = '"Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
 /** Profundidade (ordem de desenho) das camadas. */
