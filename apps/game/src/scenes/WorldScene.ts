@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import type { WorldDetail } from "@school-class/shared";
+import type { AuthUser, WorldDetail } from "@school-class/shared";
 import { DEPTH, INTERACT_DISTANCE, WORLD_ZOOM } from "../config";
 import { Npc } from "../entities/Npc";
 import { Player } from "../entities/Player";
@@ -30,7 +30,8 @@ export class WorldScene extends Phaser.Scene {
 
     // --- jogador ---
     const spawn = map.findObject("Pontos", (o) => o.name === "spawn");
-    this.player = new Player(this, spawn?.x ?? map.widthInPixels / 2, spawn?.y ?? map.heightInPixels / 2);
+    const user = this.registry.get("user") as AuthUser;
+    this.player = new Player(this, spawn?.x ?? map.widthInPixels / 2, spawn?.y ?? map.heightInPixels / 2, user.name);
     this.physics.add.collider(this.player, [ground, objects]);
 
     // --- NPCs (vindos do backend) ---

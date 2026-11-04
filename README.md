@@ -37,6 +37,15 @@ pnpm dev                                     # backend + jogo juntos
 
 Abra **http://localhost:5173** para jogar. Controles: setas/WASD para andar, Espaço (ou E) para conversar.
 
+### Contas de teste (criadas pelo seed — só para desenvolvimento)
+
+| Usuário | Senha | Papel |
+|---|---|---|
+| `aluno` | `aluno123` | Aluno, no Mundo Inicial |
+| `maria` | `maria123` | Aluna, no Mundo Inicial |
+| `joao` | `joao123` | Aluno sem mundo (testa o acesso) |
+| `professor` | `professor123` | Professor, dono do Mundo Inicial |
+
 Também dá para rodar separado: `pnpm dev:backend` (porta 3000) e `pnpm dev:game` (porta 5173, com proxy de `/api` para o backend).
 
 Outros comandos úteis:
@@ -47,14 +56,25 @@ pnpm typecheck                                   # checa tipos de todo o monorep
 pnpm dev:db:down                                 # para o banco
 ```
 
+## Autenticação
+
+- Contas são criadas pelo professor (usuário + senha, sem e-mail).
+- Senhas guardadas com **bcrypt**; a sessão é um JWT num cookie **httpOnly** (o JavaScript da página não consegue lê-lo), válido por 7 dias.
+- Login limitado a **10 tentativas por minuto** por IP.
+- Aluno só vê os mundos em que está matriculado; professor vê os mundos que criou.
+
+Rotas: `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me`.
+
 ## Produção
 
 ```bash
-cp .env.example .env   # ajuste senhas e JWT_SECRET
+cp .env.example .env   # ajuste senhas, JWT_SECRET (16+ caracteres) e COOKIE_SECURE
 docker compose up -d --build
 ```
 
 Acesse `http://localhost` (jogo) e `http://localhost/api/health` (API). As migrations são aplicadas automaticamente ao subir o backend.
+
+> Com HTTPS (recomendado em produção), defina `COOKIE_SECURE=true` para o cookie de sessão só trafegar por conexão segura.
 
 Para carregar os dados de exemplo em produção:
 

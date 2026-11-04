@@ -1,28 +1,44 @@
 /**
- * Dados de exemplo: 1 professor, 1 aluno, 1 mundo, 1 NPC com 3 tarefas.
- * Senhas provisórias — o hash de verdade entra na branch de autenticação.
+ * Dados de exemplo: 1 professor, 3 alunos, 1 mundo, 1 NPC com 3 tarefas.
+ *
+ * Contas (usuário / senha) — SÓ PARA DESENVOLVIMENTO:
+ *   professor / professor123
+ *   aluno     / aluno123     (matriculado no Mundo Inicial)
+ *   maria     / maria123     (matriculada no Mundo Inicial)
+ *   joao      / joao123      (sem mundo — para testar o acesso)
  *
  * Dev:      pnpm --filter @school-class/backend db:seed
  * Produção: docker compose exec backend node dist/seed.js
  */
 import { prisma } from "./db.js";
+import { hashPassword } from "./modules/auth/password.js";
+
+async function upsertUser(username: string, name: string, password: string, role: "STUDENT" | "TEACHER" = "STUDENT") {
+  const passwordHash = await hashPassword(password);
+  return prisma.user.upsert({
+    where: { username },
+    update: { passwordHash },
+    create: { username, name, passwordHash, role },
+  });
+}
 
 async function main() {
-  const teacher = await prisma.user.upsert({
-    where: { username: "professor" },
-    update: {},
-    create: { name: "Professor", username: "professor", passwordHash: "TODO", role: "TEACHER" },
-  });
-
-  const student = await prisma.user.upsert({
-    where: { username: "aluno" },
-    update: {},
-    create: { name: "Aluno Exemplo", username: "aluno", passwordHash: "TODO" },
-  });
+  const teacher = await upsertUser("professor", "Professor", "professor123", "TEACHER");
+  const student = await upsertUser("aluno", "Aluno Exemplo", "aluno123");
+  const maria = await upsertUser("maria", "Maria", "maria123");
+  await upsertUser("joao", "João", "joao123");
 
   const existing = await prisma.world.findFirst({ where: { name: "Mundo Inicial" } });
   if (existing) {
-    console.log("Seed já aplicado.");
+    // Mundo já existe: só garante as matrículas.
+    for (const userId of [student.id, maria.id]) {
+      await prisma.enrollment.upsert({
+        where: { userId_worldId: { userId, worldId: existing.id } },
+        update: {},
+        create: { userId, worldId: existing.id },
+      });
+    }
+    console.log("Seed já aplicado (usuários e matrículas atualizados).");
     return;
   }
 
@@ -32,7 +48,7 @@ async function main() {
       description: "Um mundo de boas-vindas para conhecer o jogo.",
       mapKey: "starter",
       ownerId: teacher.id,
-      enrollments: { create: { userId: student.id } },
+      enrollments: { create: [{ userId: student.id }, { userId: maria.id }] },
       npcs: {
         create: {
           name: "Sábia Ana",

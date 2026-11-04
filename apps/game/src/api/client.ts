@@ -1,12 +1,41 @@
-import type { PublicWorld, WorldDetail } from "@school-class/shared";
+import type { AuthUser, LoginRequest, PublicWorld, WorldDetail } from "@school-class/shared";
 
-async function get<T>(path: string): Promise<T> {
-  const res = await fetch(`/api${path}`);
-  if (!res.ok) throw new Error(`Erro ${res.status} ao buscar ${path}`);
+/** Erro de API com o status HTTP (ex.: 401 = não logado). */
+export class ApiError extends Error {
+  constructor(
+    readonly status: number,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
+async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+  // O cookie de sessão (httpOnly) vai automaticamente: mesma origem.
+  const res = await fetch(`/api${path}`, {
+    method,
+    headers: body ? { "content-type": "application/json" } : undefined,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  if (!res.ok) {
+    const data = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new ApiError(res.status, data.error ?? `Erro ${res.status}`);
+  }
   return (await res.json()) as T;
 }
 
 export const api = {
-  listWorlds: () => get<PublicWorld[]>("/worlds"),
-  getWorld: (id: string) => get<WorldDetail>(`/worlds/${id}`),
+  login: (data: LoginRequest) => request<AuthUser>("POST", "/auth/login", data),
+  logout: () => request<{ ok: true }>("POST", "/auth/logout"),
+  /** Usuário logado, ou null se não houver sessão. */
+  me: async (): Promise<AuthUser | null> => {
+    try {
+      return await request<AuthUser>("GET", "/auth/me");
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) return null;
+      throw err;
+    }
+  },
+  listWorlds: () => request<PublicWorld[]>("GET", "/worlds"),
+  getWorld: (id: string) => request<WorldDetail>("GET", `/worlds/${id}`),
 };

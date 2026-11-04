@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { DEPTH, PLAYER_SPEED } from "../config";
+import { DEPTH, FONT, PLAYER_SPEED } from "../config";
 import { type Direction, idleFrame } from "./animations";
 
 type Keys = Record<"up" | "down" | "left" | "right" | "w" | "a" | "s" | "d", Phaser.Input.Keyboard.Key>;
@@ -10,8 +10,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   /** Enquanto true, o jogador não anda (ex.: durante um diálogo). */
   frozen = false;
   private keys: Keys;
+  private label: Phaser.GameObjects.Text;
 
-  constructor(scene: Phaser.Scene, x: number, y: number) {
+  constructor(scene: Phaser.Scene, x: number, y: number, name: string) {
     super(scene, x, y, "player", idleFrame("down"));
     scene.add.existing(this);
     scene.physics.add.existing(this);
@@ -19,6 +20,15 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // Colisão só nos pés: dá a sensação de profundidade (a cabeça "passa" por cima das coisas).
     this.body.setSize(10, 5).setOffset(3, 10);
     this.setCollideWorldBounds(true);
+
+    // Nome do aluno acima da cabeça.
+    this.label = scene.add
+      .text(x, y - 11, name, {
+        fontFamily: FONT, fontSize: "6px", color: "#f6d55c", resolution: 8,
+        backgroundColor: "#00000088", padding: { x: 2, y: 1 },
+      })
+      .setOrigin(0.5, 1)
+      .setDepth(DEPTH.labels);
 
     const K = Phaser.Input.Keyboard.KeyCodes;
     this.keys = scene.input.keyboard!.addKeys({
@@ -51,5 +61,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     this.setDepth(DEPTH.characters + this.y / 100);
+    this.label.setPosition(this.x, this.y - 11);
   }
 }
