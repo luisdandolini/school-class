@@ -1,0 +1,107 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  STUDENT
+  TEACHER
+}
+
+enum TaskType {
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+  FILL_BLANK
+  OPEN
+}
+
+/// Aluno ou professor.
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  username     String   @unique
+  passwordHash String
+  role         Role     @default(STUDENT)
+  xp           Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  enrollments Enrollment[]
+  submissions Submission[]
+  worldsOwned World[]      @relation("WorldOwner")
+}
+
+/// Um "servidor": mundo temático (ex.: "Geografia - 7º ano").
+model World {
+  id          String   @id @default(cuid())
+  name        String
+  description String   @default("")
+  mapKey      String   @default("starter")
+  ownerId     String
+  createdAt   DateTime @default(now())
+
+  owner       User         @relation("WorldOwner", fields: [ownerId], references: [id])
+  npcs        Npc[]
+  enrollments Enrollment[]
+}
+
+/// Quais alunos participam de quais mundos.
+model Enrollment {
+  userId    String
+  worldId   String
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  world World @relation(fields: [worldId], references: [id], onDelete: Cascade)
+
+  @@id([userId, worldId])
+}
+
+model Npc {
+  id       String @id @default(cuid())
+  worldId  String
+  name     String
+  greeting String
+  sprite   String @default("npc")
+  x        Int
+  y        Int
+
+  world World  @relation(fields: [worldId], references: [id], onDelete: Cascade)
+  tasks Task[]
+}
+
+model Task {
+  id       String   @id @default(cuid())
+  npcId    String
+  type     TaskType
+  prompt   String
+  /// Alternativas (MULTIPLE_CHOICE).
+  options  String[]
+  /// Resposta correta. NUNCA é enviada ao jogo. Null para OPEN.
+  answer   String?
+  xpReward Int      @default(10)
+  order    Int      @default(0)
+
+  npc         Npc          @relation(fields: [npcId], references: [id], onDelete: Cascade)
+  submissions Submission[]
+}
+
+/// Cada resposta enviada por um aluno.
+model Submission {
+  id        String   @id @default(cuid())
+  userId    String
+  taskId    String
+  answer    String
+  /// null = aguardando correção do professor (tarefas OPEN).
+  correct   Boolean?
+  xpGained  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([userId, taskId])
+}
