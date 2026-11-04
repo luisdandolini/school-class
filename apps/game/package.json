@@ -1,0 +1,23 @@
+{
+  "name": "@school-class/game",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "assets": "node scripts/generate-assets.mjs",
+    "map:starter": "node scripts/generate-starter-map.mjs"
+  },
+  "dependencies": {
+    "@school-class/shared": "workspace:*",
+    "phaser": "3.90.0"
+  },
+  "devDependencies": {
+    "pngjs": "7.0.0",
+    "typescript": "5.9.3",
+    "vite": "8.3.5"
+  }
+}

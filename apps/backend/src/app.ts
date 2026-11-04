@@ -1,6 +1,7 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import { healthRoutes } from "./modules/health/health.routes.js";
+import { worldRoutes } from "./modules/worlds/worlds.routes.js";
 
 export async function buildApp() {
   const app = Fastify({ logger: true });
@@ -11,6 +12,7 @@ export async function buildApp() {
   await app.register(
     async (api) => {
       await api.register(healthRoutes);
+      await api.register(worldRoutes);
     },
     { prefix: "/api" },
   );

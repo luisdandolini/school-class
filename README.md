@@ -7,7 +7,7 @@ Jogo educacional 2D (top-down) onde alunos exploram mundos temáticos, conversam
 ```
 apps/
   backend/      API (Fastify) + futuro servidor de jogo (Colyseus) + Prisma
-  game/         Jogo em Phaser 3            (próxima branch)
+  game/         Jogo em Phaser 3 (Vite + TypeScript)
   admin/        Painel do professor (React) (futuro)
 packages/
   shared/       Tipos e regras comuns (tarefas, mundos, cálculo de nível)
@@ -32,8 +32,12 @@ pnpm dev:db                                  # sobe o Postgres no Docker
 pnpm --filter @school-class/shared build     # compila os tipos compartilhados
 pnpm --filter @school-class/backend db:migrate
 pnpm --filter @school-class/backend db:seed  # dados de exemplo
-pnpm dev:backend                             # http://localhost:3000/api/health
+pnpm dev                                     # backend + jogo juntos
 ```
+
+Abra **http://localhost:5173** para jogar. Controles: setas/WASD para andar, Espaço (ou E) para conversar.
+
+Também dá para rodar separado: `pnpm dev:backend` (porta 3000) e `pnpm dev:game` (porta 5173, com proxy de `/api` para o backend).
 
 Outros comandos úteis:
 
@@ -51,6 +55,27 @@ docker compose up -d --build
 ```
 
 Acesse `http://localhost` (jogo) e `http://localhost/api/health` (API). As migrations são aplicadas automaticamente ao subir o backend.
+
+Para carregar os dados de exemplo em produção:
+
+```bash
+docker compose exec backend node dist/seed.js
+```
+
+## Arte e mapas
+
+A arte é provisória e gerada por código (sem licenças de terceiros):
+
+```bash
+pnpm --filter @school-class/game assets       # gera tiles.png, player.png, npc.png
+pnpm --filter @school-class/game map:starter  # gera o mapa inicial (sobrescreve!)
+```
+
+- Os mapas ficam em `apps/game/public/assets/maps/` no formato do **[Tiled](https://www.mapeditor.org)** e podem ser abertos e editados nele.
+  Camadas: `Chao`, `Objetos` (colide), `Topo` (desenhada por cima do jogador) e `Pontos` (objeto `spawn`).
+- Tiles com a propriedade `collides = true` bloqueiam a passagem.
+- Para trocar a arte, basta substituir os PNGs mantendo o layout (tiles 16x16; personagens com 3 quadros x 4 direções: baixo, esquerda, direita, cima).
+- Cada mundo no banco tem um `mapKey`, que é o nome do arquivo do mapa.
 
 ## Fluxo de branches
 

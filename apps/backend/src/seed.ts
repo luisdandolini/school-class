@@ -1,14 +1,11 @@
 /**
  * Dados de exemplo: 1 professor, 1 aluno, 1 mundo, 1 NPC com 3 tarefas.
  * Senhas provisórias — o hash de verdade entra na branch de autenticação.
+ *
+ * Dev:      pnpm --filter @school-class/backend db:seed
+ * Produção: docker compose exec backend node dist/seed.js
  */
-import "dotenv/config";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "../src/generated/prisma/client.js";
-
-const prisma = new PrismaClient({
-  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }),
-});
+import { prisma } from "./db.js";
 
 async function main() {
   const teacher = await prisma.user.upsert({

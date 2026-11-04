@@ -17,3 +17,8 @@ export interface PublicNpc {
   x: number;
   y: number;
 }
+
+/** Resposta de GET /api/worlds/:id — o mundo com seus NPCs. */
+export interface WorldDetail extends PublicWorld {
+  npcs: PublicNpc[];
+}
