@@ -67,9 +67,13 @@ Em `/admin` (só contas de professor):
 - **Mundos:** criar, editar e excluir mundos; matricular e remover alunos; botão **Testar no jogo**.
 - **NPCs:** nome, fala de boas-vindas, aparência e **posição escolhida clicando no mapa** (o painel bloqueia árvores, água, casa, o ponto de partida e lugares já ocupados).
 - **Tarefas:** criar e editar os 4 tipos com **pré-visualização** de como o aluno vê; reordenar; XP por tarefa; estatísticas (quantos concluíram, respostas, aguardando correção). Editar ou excluir tarefas já respondidas mostra um aviso — o XP já ganho pelos alunos nunca é retirado.
+- **Correções:** fila de respostas livres (com contador no menu). Marque como **correta** (o aluno ganha o XP) ou **precisa melhorar**, com um comentário opcional que o aluno vê no jogo — a NPC avisa e a janela do desafio mostra o comentário para ele refazer.
+- **Relatório** (aba em cada mundo): conclusão média, progresso de cada aluno (clique para ver o que ele respondeu em cada tarefa) e as **tarefas mais difíceis**, ordenadas pela taxa de erro.
 - Cada professor só vê os alunos que cadastrou ou que estão nos mundos dele; só quem cadastrou pode excluir.
 
 Rotas de conteúdo: `/api/admin/worlds` (POST), `/api/admin/worlds/:id` (GET, PATCH, DELETE), `/api/admin/worlds/:id/npcs` (POST), `/api/admin/npcs/:id` (PATCH, DELETE), `/api/admin/npcs/:id/tasks` (GET, POST), `/api/admin/npcs/:id/tasks/order` (PUT), `/api/admin/tasks/:id` (PUT, DELETE).
+
+Rotas de correção e relatório: `/api/admin/reviews` (GET), `/api/admin/reviews/count`, `/api/admin/reviews/:id` (POST), `/api/admin/worlds/:id/report`, `/api/admin/worlds/:id/students/:studentId/progress`.
 
 Rotas de alunos: `/api/admin/students` (GET, POST), `/api/admin/students/bulk`, `/api/admin/students/:id` (PATCH, DELETE), `/api/admin/students/:id/reset-password`, `/api/admin/worlds`, `/api/admin/worlds/:id/students` (POST, DELETE).
 
@@ -82,7 +86,7 @@ Ao conversar com um NPC, o aluno recebe os desafios dele, um por vez:
 | `MULTIPLE_CHOICE` | escolhe uma alternativa (teclas 1–4) | automática |
 | `TRUE_FALSE` | Verdadeiro ou Falso | automática (`answer` = `true`/`false`) |
 | `FILL_BLANK` | digita a resposta | automática; várias respostas aceitas com `\|` (ex.: `56\|cinquenta e seis`) |
-| `OPEN` | escreve um texto livre | pelo professor (painel, em breve) |
+| `OPEN` | escreve um texto livre | pelo professor, na página **Correções** do painel |
 
 - A correção ignora maiúsculas, acentos, espaços extras e pontuação final.
 - **O jogo nunca recebe a resposta certa** — o backend corrige.

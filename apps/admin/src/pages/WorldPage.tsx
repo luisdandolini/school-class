@@ -6,17 +6,19 @@ import { ConfirmDialog } from "../components/ConfirmDialog";
 import { MapPicker } from "../components/MapPicker";
 import { Modal } from "../components/Modal";
 import { NpcForm } from "../components/NpcForm";
+import { ReportTab } from "../components/ReportTab";
 import { SpriteIcon } from "../components/SpriteIcon";
 import { WorldForm } from "../components/WorldForm";
 import { GAME_URL } from "../config";
 import { useAsync } from "../useAsync";
 
-type Tab = "conteudo" | "alunos";
+type Tab = "conteudo" | "alunos" | "relatorio";
 
 export function WorldPage() {
   const { worldId = "" } = useParams();
   const [params, setParams] = useSearchParams();
-  const tab: Tab = params.get("aba") === "alunos" ? "alunos" : "conteudo";
+  const aba = params.get("aba");
+  const tab: Tab = aba === "alunos" || aba === "relatorio" ? aba : "conteudo";
   const world = useAsync(() => api.world(worldId), [worldId]);
   const navigate = useNavigate();
   const [dialog, setDialog] = useState<"edit" | "delete" | "npc" | null>(null);
@@ -60,13 +62,14 @@ export function WorldPage() {
         <button role="tab" aria-selected={tab === "alunos"} className={tab === "alunos" ? "active" : ""} onClick={() => setParams({ aba: "alunos" })}>
           Alunos ({w.studentCount})
         </button>
+        <button role="tab" aria-selected={tab === "relatorio"} className={tab === "relatorio" ? "active" : ""} onClick={() => setParams({ aba: "relatorio" })}>
+          📊 Relatório
+        </button>
       </div>
 
-      {tab === "conteudo" ? (
-        <ContentTab world={w} onNewNpc={() => setDialog("npc")} />
-      ) : (
-        <StudentsTab world={w} onChange={() => void world.reload()} />
-      )}
+      {tab === "conteudo" && <ContentTab world={w} onNewNpc={() => setDialog("npc")} />}
+      {tab === "alunos" && <StudentsTab world={w} onChange={() => void world.reload()} />}
+      {tab === "relatorio" && <ReportTab world={w} />}
 
       {dialog === "edit" && (
         <WorldForm

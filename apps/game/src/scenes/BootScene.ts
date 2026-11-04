@@ -31,7 +31,7 @@ export class BootScene extends Phaser.Scene {
     try {
       const worlds = await api.listWorlds();
       if (worlds.length === 0) {
-        status.setText("Você ainda não está em nenhum mundo.\nPeça ao seu professor para te adicionar a uma turma.");
+        status.setText("Você ainda não está em nenhum mundo.\nPeça para te adicionarem a uma turma.");
         this.addLogoutButton(height / 2 + 90);
         return;
       }

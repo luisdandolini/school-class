@@ -106,14 +106,18 @@ model Submission {
   taskId    String
   answer    String
   /// null = aguardando correção do professor (tarefas OPEN).
-  correct   Boolean?
-  xpGained  Int      @default(0)
-  createdAt DateTime @default(now())
+  correct    Boolean?
+  xpGained   Int       @default(0)
+  createdAt  DateTime  @default(now())
+  /// Comentário do professor ao corrigir uma resposta aberta.
+  feedback   String?
+  reviewedAt DateTime?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
   @@index([userId, taskId])
+  @@index([taskId, correct])
 }
 
 /// Tarefa concluída por um aluno. A chave (userId, taskId) garante que o XP

@@ -16,6 +16,7 @@ import {
   updateStudent,
 } from "./students.service.js";
 import { contentRoutes } from "./content.routes.js";
+import { reviewRoutes } from "./reviews.routes.js";
 import { enrollStudents, listOwnWorlds, unenrollStudent } from "./worlds.service.js";
 
 const name = z.string().trim().min(1, "Informe o nome").max(80, "Nome muito longo");
@@ -36,6 +37,7 @@ const params = { student: z.object({ id }), world: z.object({ worldId: id }), en
 export async function adminRoutes(app: FastifyInstance) {
   app.addHook("preHandler", app.requireRole("TEACHER"));
   await app.register(contentRoutes); // mundos, NPCs e tarefas
+  await app.register(reviewRoutes); // correções e relatórios
 
   // ---------- alunos ----------
   app.get("/admin/students", async (request): Promise<AdminStudent[]> => {

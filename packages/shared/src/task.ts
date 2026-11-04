@@ -28,6 +28,8 @@ export type TaskStatus = "AVAILABLE" | "PENDING_REVIEW" | "COMPLETED";
 
 export interface NpcTask extends PublicTask {
   status: TaskStatus;
+  /** Resposta aberta já corrigida: resultado e comentário do professor. */
+  review?: { correct: boolean; feedback: string | null };
 }
 
 /** Valores enviados para tarefas TRUE_FALSE. */

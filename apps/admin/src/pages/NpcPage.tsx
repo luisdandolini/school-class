@@ -101,7 +101,9 @@ export function NpcPage() {
                   <p className="task-stats small">
                     <span title="Alunos que concluíram">✅ {t.stats.completed} concluíram</span>
                     <span title="Respostas enviadas, certas e erradas">📨 {t.stats.attempts} respostas</span>
-                    {t.stats.pendingReview > 0 && <span className="pending">⏳ {t.stats.pendingReview} aguardando correção</span>}
+                    {t.stats.pendingReview > 0 && (
+                      <Link to="/correcoes" className="pending">⏳ {t.stats.pendingReview} aguardando correção →</Link>
+                    )}
                   </p>
                 </div>
                 <div className="task-actions">

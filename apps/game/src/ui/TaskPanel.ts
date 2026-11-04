@@ -66,12 +66,18 @@ export class TaskPanel {
       const prompt = el("h2", "task-prompt", task.prompt);
       prompt.id = "task-prompt";
 
+      // Resposta aberta devolvida pelo professor: mostra o comentário para o aluno melhorar.
+      const teacherNote =
+        task.review && !task.review.correct
+          ? el("p", "task-teacher-note", `💬 Comentário da correção: ${task.review.feedback ?? "Tente explicar melhor."}`)
+          : null;
+
       const body = el("div", "task-body");
       const feedback = el("p", "task-feedback");
       feedback.setAttribute("role", "status");
       const footer = el("footer", "task-footer");
 
-      card.append(header, prompt, body, feedback, footer);
+      card.append(header, prompt, ...(teacherNote ? [teacherNote] : []), body, feedback, footer);
       overlay.append(card);
       document.body.append(overlay);
       this.overlay = overlay;
@@ -184,7 +190,7 @@ export class TaskPanel {
               break;
             case "PENDING_REVIEW":
               feedback.classList.add("info");
-              feedback.textContent = "📨 Resposta enviada! Seu professor vai corrigir e então você ganha o XP.";
+              feedback.textContent = "📨 Resposta enviada! Quando ela for corrigida, você ganha o XP.";
               showDone();
               break;
             case "ALREADY_COMPLETED":

@@ -9,10 +9,15 @@ import type {
   CreateStudentRequest,
   LoginRequest,
   NpcInput,
+  PendingReview,
+  ReviewRequest,
+  ReviewResult,
   StudentCredentials,
+  StudentTaskProgress,
   TaskInput,
   UpdateStudentRequest,
   WorldInput,
+  WorldReport,
 } from "@school-class/shared";
 
 export class ApiError extends Error {
@@ -78,6 +83,14 @@ export const api = {
   createTask: (npcId: string, data: TaskInput) => request<AdminTask>("POST", `/admin/npcs/${npcId}/tasks`, data),
   updateTask: (id: string, data: TaskInput) => request<AdminTask>("PUT", `/admin/tasks/${id}`, data),
   deleteTask: (id: string) => request<void>("DELETE", `/admin/tasks/${id}`),
+  reviews: (worldId?: string) =>
+    request<PendingReview[]>("GET", `/admin/reviews${worldId ? `?worldId=${encodeURIComponent(worldId)}` : ""}`),
+  reviewCount: () => request<{ pending: number }>("GET", "/admin/reviews/count"),
+  review: (id: string, data: ReviewRequest) => request<ReviewResult>("POST", `/admin/reviews/${id}`, data),
+  worldReport: (worldId: string) => request<WorldReport>("GET", `/admin/worlds/${worldId}/report`),
+  studentProgress: (worldId: string, studentId: string) =>
+    request<StudentTaskProgress[]>("GET", `/admin/worlds/${worldId}/students/${studentId}/progress`),
+
   reorderTasks: (npcId: string, taskIds: string[]) => request<void>("PUT", `/admin/npcs/${npcId}/tasks/order`, { taskIds }),
 
   enroll: (worldId: string, studentIds: string[]) =>

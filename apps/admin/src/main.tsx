@@ -5,6 +5,7 @@ import { AuthProvider } from "./auth";
 import { Layout } from "./components/Layout";
 import { LoginPage } from "./pages/LoginPage";
 import { NpcPage } from "./pages/NpcPage";
+import { ReviewsPage } from "./pages/ReviewsPage";
 import { StudentsPage } from "./pages/StudentsPage";
 import { WorldPage } from "./pages/WorldPage";
 import { WorldsPage } from "./pages/WorldsPage";
@@ -22,6 +23,7 @@ createRoot(document.getElementById("root")!).render(
             <Route path="/mundos" element={<WorldsPage />} />
             <Route path="/mundos/:worldId" element={<WorldPage />} />
             <Route path="/mundos/:worldId/npcs/:npcId" element={<NpcPage />} />
+            <Route path="/correcoes" element={<ReviewsPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/alunos" replace />} />
         </Routes>

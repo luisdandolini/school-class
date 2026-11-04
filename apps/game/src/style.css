@@ -175,3 +175,8 @@ canvas { image-rendering: pixelated; }
 .world-option strong { font-size: 20px; }
 .world-option span { color: var(--muted); }
 .world-option em { align-self: flex-start; margin-top: 4px; font-style: normal; font-size: 12px; font-weight: 700; color: var(--accent-text); background: var(--accent); padding: 1px 8px; border-radius: 999px; }
+
+.task-teacher-note {
+  margin: -6px 0 16px; padding: 12px 14px; border-radius: 10px;
+  background: #33374a; border-left: 4px solid #8ec5ff; color: #dbe8ff; font-size: 17px;
+}

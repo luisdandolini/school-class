@@ -101,10 +101,12 @@ export class WorldScene extends Phaser.Scene {
 
       const available = () => tasks.filter((t) => t.status === "AVAILABLE");
       const count = available().length;
+      const notes = teacherNotes(tasks);
 
       if (count > 0) {
         await this.ui.dialog.open(name, [
           npc.data_.greeting,
+          ...notes,
           count === 1 ? "Tenho um desafio para você. Vamos lá?" : `Tenho ${count} desafios para você. Vamos lá?`,
         ]);
 
@@ -123,7 +125,7 @@ export class WorldScene extends Phaser.Scene {
         }
       }
 
-      await this.ui.dialog.open(name, [this.farewell(tasks)]);
+      await this.ui.dialog.open(name, count > 0 ? [this.farewell(tasks)] : [...notes, this.farewell(tasks)]);
     } finally {
       npc.resetFacing();
       this.talkingTo = undefined;
@@ -136,7 +138,7 @@ export class WorldScene extends Phaser.Scene {
     if (tasks.length === 0) return "Por enquanto não tenho desafios. Volte mais tarde!";
     if (tasks.every((t) => t.status === "COMPLETED")) return "Você completou todos os meus desafios. Parabéns! 🎉";
     if (tasks.some((t) => t.status === "AVAILABLE")) return "Volte quando quiser continuar!";
-    return "Já recebi suas respostas. Assim que seu professor corrigir, você ganha o XP!";
+    return "Já recebi suas respostas. Assim que forem corrigidas, você ganha o XP!";
   }
 
   private onTaskResult(npc: Npc, tasks: NpcTask[], result: TaskResult) {
@@ -182,4 +184,39 @@ export class WorldScene extends Phaser.Scene {
       kb.enabled = true;
     }
   }
+}
+
+const SEEN_KEY = "school-class:comentarios-vistos";
+
+/**
+ * Falas do NPC sobre as respostas abertas que o professor corrigiu:
+ * - corrigida como certa, com comentário: repassa o comentário uma única vez;
+ * - "precisa melhorar": avisa sempre, até o aluno reenviar (o comentário aparece na janela do desafio).
+ */
+function teacherNotes(tasks: NpcTask[]): string[] {
+  let seen: string[] = [];
+  try {
+    seen = JSON.parse(localStorage.getItem(SEEN_KEY) ?? "[]") as string[];
+  } catch {
+    /* sem armazenamento: mostra de novo, sem problema */
+  }
+  const notes: string[] = [];
+  for (const t of tasks) {
+    if (!t.review) continue;
+    if (t.review.correct && t.status === "COMPLETED" && t.review.feedback) {
+      const key = `${t.id}:${t.review.feedback}`;
+      if (!seen.includes(key)) {
+        notes.push(`Sua resposta foi corrigida e veio com um recado: “${t.review.feedback}”`);
+        seen.push(key);
+      }
+    } else if (!t.review.correct && t.status === "AVAILABLE") {
+      notes.push("Uma das suas respostas voltou da correção com um pedido para melhorar. Vamos tentar de novo?");
+    }
+  }
+  try {
+    localStorage.setItem(SEEN_KEY, JSON.stringify(seen.slice(-200)));
+  } catch {
+    /* ignora */
+  }
+  return notes;
 }

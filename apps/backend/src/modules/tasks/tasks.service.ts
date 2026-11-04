@@ -51,7 +51,25 @@ export async function listNpcTasks(user: SessionUser, npcId: string): Promise<Np
   if (!npc) throw new NotFoundError("NPC não encontrado");
 
   const status = await statusByTask(user.sub, npc.tasks.map((t) => t.id));
-  return npc.tasks.map((t) => ({ ...t, status: status.get(t.id) ?? "AVAILABLE" }));
+
+  // Última resposta aberta corrigida pelo professor (para o NPC repassar o comentário).
+  const openIds = npc.tasks.filter((t) => t.type === "OPEN").map((t) => t.id);
+  const reviewed = openIds.length
+    ? await prisma.submission.findMany({
+        where: { userId: user.sub, taskId: { in: openIds }, reviewedAt: { not: null } },
+        orderBy: { reviewedAt: "desc" },
+        select: { taskId: true, correct: true, feedback: true },
+      })
+    : [];
+
+  return npc.tasks.map((t) => {
+    const last = reviewed.find((r) => r.taskId === t.id);
+    return {
+      ...t,
+      status: status.get(t.id) ?? "AVAILABLE",
+      ...(last && last.correct !== null ? { review: { correct: last.correct, feedback: last.feedback } } : {}),
+    };
+  });
 }
 
 /** Progresso do usuário em cada NPC de um mundo (para os marcadores no mapa). */
