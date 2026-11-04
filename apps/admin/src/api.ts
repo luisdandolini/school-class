@@ -9,6 +9,7 @@ import type {
   CreateStudentRequest,
   LoginRequest,
   NpcInput,
+  OnlinePlayer,
   PendingReview,
   ReviewRequest,
   ReviewResult,
@@ -83,6 +84,7 @@ export const api = {
   createTask: (npcId: string, data: TaskInput) => request<AdminTask>("POST", `/admin/npcs/${npcId}/tasks`, data),
   updateTask: (id: string, data: TaskInput) => request<AdminTask>("PUT", `/admin/tasks/${id}`, data),
   deleteTask: (id: string) => request<void>("DELETE", `/admin/tasks/${id}`),
+  online: (worldId: string) => request<OnlinePlayer[]>("GET", `/admin/worlds/${worldId}/online`),
   reviews: (worldId?: string) =>
     request<PendingReview[]>("GET", `/admin/reviews${worldId ? `?worldId=${encodeURIComponent(worldId)}` : ""}`),
   reviewCount: () => request<{ pending: number }>("GET", "/admin/reviews/count"),

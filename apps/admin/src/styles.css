@@ -312,3 +312,9 @@ ul, ol { padding-left: 20px; }
 .progress-item-head { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-weight: 600; }
 .progress-prompt { margin: 6px 0 4px; }
 .progress-item p { margin: 4px 0 0; overflow-wrap: anywhere; }
+
+/* ---------- online ---------- */
+.online { color: var(--success); font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+.dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 3px #2e8b4733; }
+.dot-off { background: #b9bfd0; box-shadow: none; }
+.online-names { margin: 6px 0 0; }

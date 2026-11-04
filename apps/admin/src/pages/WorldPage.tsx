@@ -20,6 +20,7 @@ export function WorldPage() {
   const aba = params.get("aba");
   const tab: Tab = aba === "alunos" || aba === "relatorio" ? aba : "conteudo";
   const world = useAsync(() => api.world(worldId), [worldId]);
+  const online = useAsync(() => api.online(worldId), [worldId], 15_000);
   const navigate = useNavigate();
   const [dialog, setDialog] = useState<"edit" | "delete" | "npc" | null>(null);
 
@@ -46,7 +47,13 @@ export function WorldPage() {
             <span><strong>{w.studentCount}</strong> alunos</span>
             <span><strong>{w.npcCount}</strong> NPCs</span>
             <span><strong>{w.taskCount}</strong> tarefas</span>
+            <span className={online.data?.length ? "online" : "muted"}>
+              <span className={online.data?.length ? "dot" : "dot dot-off"} /> {online.data?.length ?? 0} jogando agora
+            </span>
           </div>
+          {online.data && online.data.length > 0 && (
+            <p className="online-names small muted">{online.data.map((p) => p.name).join(", ")}</p>
+          )}
         </div>
         <div className="page-actions">
           <a className="btn" href={`${GAME_URL}?mundo=${w.id}`} target="_blank" rel="noreferrer">🎮 Testar no jogo</a>

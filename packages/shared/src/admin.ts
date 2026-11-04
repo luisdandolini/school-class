@@ -27,6 +27,8 @@ export interface AdminWorld {
   studentCount: number;
   npcCount: number;
   taskCount: number;
+  /** Alunos conectados agora neste mundo. */
+  onlineCount: number;
 }
 
 export interface AdminWorldDetail extends AdminWorld {

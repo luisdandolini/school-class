@@ -17,7 +17,7 @@ import {
 } from "./students.service.js";
 import { contentRoutes } from "./content.routes.js";
 import { reviewRoutes } from "./reviews.routes.js";
-import { enrollStudents, listOwnWorlds, unenrollStudent } from "./worlds.service.js";
+import { enrollStudents, listOwnWorlds, onlinePlayers, unenrollStudent } from "./worlds.service.js";
 
 const name = z.string().trim().min(1, "Informe o nome").max(80, "Nome muito longo");
 const username = z
@@ -84,6 +84,11 @@ export async function adminRoutes(app: FastifyInstance) {
 
   // ---------- mundos e matrículas ----------
   app.get("/admin/worlds", async (request): Promise<AdminWorld[]> => listOwnWorlds(request.user.sub));
+
+  app.get("/admin/worlds/:worldId/online", async (request) => {
+    const { worldId } = params.world.parse(request.params);
+    return onlinePlayers(request.user.sub, worldId);
+  });
 
   app.post("/admin/worlds/:worldId/students", async (request, reply) => {
     const { worldId } = params.world.parse(request.params);

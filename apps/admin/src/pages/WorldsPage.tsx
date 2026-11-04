@@ -6,7 +6,7 @@ import { WorldForm } from "../components/WorldForm";
 import { useAsync } from "../useAsync";
 
 export function WorldsPage() {
-  const worlds = useAsync(() => api.worlds(), []);
+  const worlds = useAsync(() => api.worlds(), [], 20_000);
   const [creating, setCreating] = useState(false);
   const navigate = useNavigate();
 
@@ -44,6 +44,7 @@ export function WorldsPage() {
                 <span><strong>{w.studentCount}</strong> alunos</span>
                 <span><strong>{w.npcCount}</strong> NPCs</span>
                 <span><strong>{w.taskCount}</strong> tarefas</span>
+                {w.onlineCount > 0 && <span className="online"><span className="dot" /> {w.onlineCount} online</span>}
               </div>
             </Link>
           ))}

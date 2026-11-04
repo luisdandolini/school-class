@@ -1,6 +1,7 @@
-import type { PendingReview, ReviewResult } from "@school-class/shared";
+import { levelFromXp, type PendingReview, type ReviewResult } from "@school-class/shared";
 import { prisma } from "../../db.js";
 import { HttpError } from "../../lib/http-error.js";
+import { hub } from "../realtime/hub.js";
 
 /** Respostas abertas aguardando correção nos mundos do professor (mais antigas primeiro). */
 export async function listPendingReviews(teacherId: string, worldId?: string): Promise<PendingReview[]> {
@@ -52,11 +53,11 @@ export async function reviewSubmission(
 
   const data = { correct, feedback: feedback?.trim() || null, reviewedAt: new Date() };
 
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     // "Reserva" a correção: se outra aba/professor corrigiu ao mesmo tempo, count = 0.
     const claimed = await tx.submission.updateMany({ where: { id: submissionId, correct: null }, data });
     if (claimed.count === 0) throw new HttpError(409, "Esta resposta já foi corrigida");
-    if (!correct) return { id: submissionId, correct, xpGained: 0 };
+    if (!correct) return { id: submissionId, correct, xpGained: 0, newXp: null as number | null };
 
     // ON CONFLICT DO NOTHING: se o aluno já tinha concluído (caso raro), count = 0 e não há XP de novo.
     // (Um erro de chave duplicada aqui invalidaria a transação inteira no PostgreSQL.)
@@ -65,10 +66,17 @@ export async function reviewSubmission(
       skipDuplicates: true,
     });
     const xpGained = created.count === 1 ? sub.task.xpReward : 0;
+    let newXp: number | null = null;
     if (xpGained > 0) {
       await tx.submission.update({ where: { id: submissionId }, data: { xpGained } });
-      await tx.user.update({ where: { id: sub.userId }, data: { xp: { increment: xpGained } } });
+      newXp = (await tx.user.update({ where: { id: sub.userId }, data: { xp: { increment: xpGained } } })).xp;
     }
-    return { id: submissionId, correct, xpGained };
+    return { id: submissionId, correct, xpGained, newXp };
   });
+
+  // Depois de gravar: se subiu de nível, avisa os colegas online.
+  if (result.newXp !== null && levelFromXp(result.newXp) > levelFromXp(result.newXp - result.xpGained)) {
+    hub.levelUp(sub.userId, levelFromXp(result.newXp));
+  }
+  return { id: result.id, correct: result.correct, xpGained: result.xpGained };
 }

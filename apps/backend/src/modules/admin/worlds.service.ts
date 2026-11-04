@@ -1,6 +1,7 @@
 import type { AdminWorld } from "@school-class/shared";
 import { prisma } from "../../db.js";
 import { HttpError } from "../../lib/http-error.js";
+import { hub } from "../realtime/hub.js";
 import { visibleStudents } from "./students.service.js";
 
 export async function listOwnWorlds(teacherId: string): Promise<AdminWorld[]> {
@@ -20,6 +21,7 @@ export async function listOwnWorlds(teacherId: string): Promise<AdminWorld[]> {
     studentCount: w._count.enrollments,
     npcCount: w._count.npcs,
     taskCount: w.npcs.reduce((sum, n) => sum + n._count.tasks, 0),
+    onlineCount: hub.onlineCount(w.id),
   }));
 }
 
@@ -45,4 +47,9 @@ export async function enrollStudents(teacherId: string, worldId: string, student
 export async function unenrollStudent(teacherId: string, worldId: string, studentId: string) {
   await assertOwnWorld(teacherId, worldId);
   await prisma.enrollment.deleteMany({ where: { worldId, userId: studentId } });
+}
+
+export async function onlinePlayers(teacherId: string, worldId: string) {
+  await assertOwnWorld(teacherId, worldId);
+  return hub.online(worldId);
 }

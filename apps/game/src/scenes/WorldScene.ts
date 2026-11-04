@@ -1,9 +1,12 @@
 import Phaser from "phaser";
-import type { AuthUser, NpcTask, TaskResult, WorldDetail } from "@school-class/shared";
+import { EMOTES, WS_CLOSE, type AuthUser, type NpcTask, type ServerMessage, type TaskResult, type WorldDetail } from "@school-class/shared";
 import { api, ApiError } from "../api/client";
 import { DEPTH, FONT, INTERACT_DISTANCE, WORLD_ZOOM } from "../config";
 import { Npc } from "../entities/Npc";
 import { Player } from "../entities/Player";
+import { RemotePlayer } from "../entities/RemotePlayer";
+import { Realtime } from "../net/Realtime";
+import { showBubble } from "../ui/bubble";
 import type { UIScene } from "./UIScene";
 
 /** Cena principal: mapa, jogador, NPCs e interação. */
@@ -13,6 +16,8 @@ export class WorldScene extends Phaser.Scene {
   private nearby?: Npc;
   private talkingTo?: Npc;
   private ui!: UIScene;
+  private realtime?: Realtime;
+  private remotes = new Map<string, RemotePlayer>();
 
   constructor() {
     super("World");
@@ -53,10 +58,84 @@ export class WorldScene extends Phaser.Scene {
     const K = Phaser.Input.Keyboard.KeyCodes;
     this.input.keyboard!.addKey(K.SPACE).on("down", () => this.interact());
     this.input.keyboard!.addKey(K.E).on("down", () => this.interact());
+
+    // Emotes: teclas 1 a 6 (ou o botão de emotes na interface).
+    const digits = [K.ONE, K.TWO, K.THREE, K.FOUR, K.FIVE, K.SIX];
+    EMOTES.forEach((e, i) => this.input.keyboard!.addKey(digits[i]).on("down", () => this.sendEmote(i)));
+    this.ui.events.on("emote", (i: number) => this.sendEmote(i));
+
+    this.connectRealtime(world.id);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.realtime?.destroy());
   }
 
-  update() {
+  // ---------- multiplayer ----------
+
+  private connectRealtime(worldId: string) {
+    const rt = new Realtime(worldId);
+    this.realtime = rt;
+    const countOnline = () => this.ui.setOnline(this.remotes.size + 1, rt.connected);
+
+    rt.on("welcome", (m: Extract<ServerMessage, { t: "welcome" }>) => {
+      // Ao (re)conectar, a lista do servidor é a verdade.
+      this.remotes.forEach((r) => r.destroy());
+      this.remotes.clear();
+      m.players.forEach((p) => this.remotes.set(p.id, new RemotePlayer(this, p)));
+      countOnline();
+    });
+    rt.on("join", (m: Extract<ServerMessage, { t: "join" }>) => {
+      this.remotes.get(m.player.id)?.destroy();
+      const r = new RemotePlayer(this, m.player);
+      this.remotes.set(m.player.id, r);
+      showBubble(this, r, "👋", 1500);
+      countOnline();
+    });
+    rt.on("move", (m: Extract<ServerMessage, { t: "move" }>) => this.remotes.get(m.id)?.setState_(m.x, m.y, m.facing, m.moving));
+    rt.on("leave", (m: Extract<ServerMessage, { t: "leave" }>) => {
+      this.remotes.get(m.id)?.destroy();
+      this.remotes.delete(m.id);
+      countOnline();
+    });
+    rt.on("emote", (m: Extract<ServerMessage, { t: "emote" }>) => {
+      const r = this.remotes.get(m.id);
+      const e = EMOTES.find((x) => x.id === m.emote);
+      if (r && e) showBubble(this, r, e.text);
+    });
+    rt.on("levelup", (m: Extract<ServerMessage, { t: "levelup" }>) => {
+      const r = this.remotes.get(m.id);
+      if (r) {
+        r.setLevel(m.level);
+        showBubble(this, r, `⭐ Nível ${m.level}!`);
+      }
+      this.ui.notify(`🎉 ${m.name} subiu para o nível ${m.level}!`);
+    });
+    rt.on("status", countOnline);
+    // A interface é criada logo depois desta cena: atualiza o contador quando ela estiver pronta.
+    this.ui.events.once(Phaser.Scenes.Events.CREATE, countOnline);
+    rt.on("stopped", (code: number) => {
+      this.ui.notify(
+        code === WS_CLOSE.replaced
+          ? "Você abriu o jogo em outra aba. Os colegas agora veem você por lá."
+          : "Não foi possível entrar no modo multiplayer deste mundo.",
+        8000,
+      );
+      this.remotes.forEach((r) => r.destroy());
+      this.remotes.clear();
+      this.ui.setOnline(null, false);
+    });
+    countOnline();
+  }
+
+  private sendEmote(index: number) {
+    const e = EMOTES[index];
+    if (!e || this.talkingTo) return;
+    showBubble(this, this.player, e.text);
+    this.realtime?.sendEmote(e.id);
+  }
+
+  update(_time: number, delta: number) {
     this.player.update();
+    this.realtime?.sendMove(this.player.x, this.player.y, this.player.facing, this.player.body.velocity.lengthSq() > 0);
+    this.remotes.forEach((r) => r.tick(delta));
 
     // Mostra "Espaço" sobre o NPC mais próximo ao alcance.
     let closest: Npc | undefined;

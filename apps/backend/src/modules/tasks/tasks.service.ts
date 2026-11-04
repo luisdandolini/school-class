@@ -9,6 +9,7 @@ import {
 import { prisma } from "../../db.js";
 import { Prisma } from "../../generated/prisma/client.js";
 import { toAuthUser } from "../auth/auth.service.js";
+import { hub } from "../realtime/hub.js";
 import { accessibleWorlds } from "../worlds/access.js";
 import { gradeAnswer } from "./grading.js";
 
@@ -99,6 +100,7 @@ export async function submitAnswer(user: SessionUser, taskId: string, answer: st
   const result = async (outcome: TaskResult["outcome"], xpGained = 0): Promise<TaskResult> => {
     const u = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
     const leveledUp = xpGained > 0 && levelFromXp(u.xp) > levelFromXp(u.xp - xpGained);
+    if (leveledUp) hub.levelUp(userId, levelFromXp(u.xp)); // comemoração para os colegas online
     return { taskId, outcome, xpGained, leveledUp, user: toAuthUser(u) };
   };
 

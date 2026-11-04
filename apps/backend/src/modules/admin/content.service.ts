@@ -62,7 +62,7 @@ export async function getWorldDetail(teacherId: string, worldId: string): Promis
 
 export async function createWorld(teacherId: string, input: WorldInput): Promise<AdminWorld> {
   const w = await prisma.world.create({ data: { ...input, ownerId: teacherId } });
-  return { id: w.id, name: w.name, description: w.description, mapKey: w.mapKey, studentCount: 0, npcCount: 0, taskCount: 0 };
+  return { id: w.id, name: w.name, description: w.description, mapKey: w.mapKey, studentCount: 0, npcCount: 0, taskCount: 0, onlineCount: 0 };
 }
 
 export async function updateWorld(teacherId: string, worldId: string, input: Partial<WorldInput>) {

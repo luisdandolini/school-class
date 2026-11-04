@@ -6,6 +6,7 @@ import authPlugin from "./plugins/auth.js";
 import { adminRoutes } from "./modules/admin/admin.routes.js";
 import { authRoutes } from "./modules/auth/auth.routes.js";
 import { healthRoutes } from "./modules/health/health.routes.js";
+import { realtimeRoutes } from "./modules/realtime/realtime.routes.js";
 import { taskRoutes } from "./modules/tasks/tasks.routes.js";
 import { worldRoutes } from "./modules/worlds/worlds.routes.js";
 
@@ -51,6 +52,7 @@ export async function buildApp() {
       await api.register(worldRoutes);
       await api.register(taskRoutes);
       await api.register(adminRoutes);
+      await api.register(realtimeRoutes);
     },
     { prefix: "/api" },
   );

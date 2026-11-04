@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import type { AuthUser, TaskResult } from "@school-class/shared";
+import { EMOTES, type AuthUser, type TaskResult } from "@school-class/shared";
 import { logout } from "../auth/login";
 import { FONT } from "../config";
 import { DialogBox } from "../ui/DialogBox";
@@ -13,6 +13,10 @@ export class UIScene extends Phaser.Scene {
   hud!: Hud;
   readonly taskPanel = new TaskPanel();
   private controlsHint!: Phaser.GameObjects.Text;
+  private onlineText!: Phaser.GameObjects.Text;
+  private emoteButton!: Phaser.GameObjects.Text;
+  private emoteMenu!: Phaser.GameObjects.Container;
+  private notices: Phaser.GameObjects.Text[] = [];
 
   constructor() {
     super("UI");
@@ -25,10 +29,14 @@ export class UIScene extends Phaser.Scene {
 
     this.hud = new Hud(this, 20, 20, user);
 
-    // Nome do mundo, centralizado no topo.
-    this.add
+    // Nome do mundo, centralizado no topo, e quantos estão online.
+    const title = this.add
       .text(width / 2, 20, worldName, { ...style, fontSize: "22px", fontStyle: "bold", padding: { x: 14, y: 8 } })
       .setOrigin(0.5, 0);
+    this.onlineText = this.add
+      .text(width / 2, title.y + title.height + 6, "", { ...style, fontSize: "15px", padding: { x: 10, y: 4 } })
+      .setOrigin(0.5, 0)
+      .setAlpha(0.9);
 
     // Botão "Sair".
     const exit = this.add
@@ -58,13 +66,91 @@ export class UIScene extends Phaser.Scene {
 
     // Dica de controles, no canto inferior direito.
     this.controlsHint = this.add
-      .text(width - 20, this.scale.height - 20, "Setas / WASD: andar   ·   Espaço: conversar", {
+      .text(width - 20, this.scale.height - 20, "Setas / WASD: andar   ·   Espaço: conversar   ·   1–6: emotes", {
         ...style, fontSize: "16px", padding: { x: 12, y: 6 },
       })
       .setOrigin(1, 1)
       .setAlpha(0.8);
 
+    this.createEmoteMenu();
     this.dialog = new DialogBox(this);
+  }
+
+  /** Botão "😀 Emotes" (canto inferior esquerdo) com as frases prontas — bom para mouse e tablet. */
+  private createEmoteMenu() {
+    const { height } = this.scale;
+    this.emoteButton = this.add
+      .text(20, height - 20, "😀 Emotes", {
+        fontFamily: FONT, fontSize: "18px", fontStyle: "bold", color: "#1b1f2a",
+        backgroundColor: "#f6d55c", padding: { x: 14, y: 8 },
+      })
+      .setOrigin(0, 1)
+      .setInteractive({ useHandCursor: true });
+
+    this.emoteMenu = this.add.container(20, height - 70).setVisible(false);
+    EMOTES.forEach((e, i) => {
+      const item = this.add
+        .text(0, -i * 44, `${i + 1}  ${e.text}`, {
+          fontFamily: FONT, fontSize: "18px", color: "#ffffff",
+          backgroundColor: "#1b1f2aee", padding: { x: 12, y: 8 }, fixedWidth: 260,
+        })
+        .setOrigin(0, 1)
+        .setInteractive({ useHandCursor: true });
+      item.on("pointerover", () => item.setBackgroundColor("#3a4154"));
+      item.on("pointerout", () => item.setBackgroundColor("#1b1f2aee"));
+      item.on("pointerdown", () => {
+        this.events.emit("emote", i);
+        this.emoteMenu.setVisible(false);
+      });
+      this.emoteMenu.add(item);
+    });
+    this.emoteButton.on("pointerdown", () => this.emoteMenu.setVisible(!this.emoteMenu.visible));
+  }
+
+  /** Atualiza "👥 N no mundo" (null = multiplayer indisponível). */
+  setOnline(count: number | null, connected: boolean) {
+    if (!this.onlineText) return; // interface ainda não criada
+    if (count === null) return this.onlineText.setText("").setVisible(false);
+    this.onlineText
+      .setVisible(true)
+      .setText(connected ? `👥 ${count} ${count === 1 ? "pessoa" : "pessoas"} no mundo` : "⚠️ Reconectando...");
+  }
+
+  /** Aviso discreto no canto (ex.: "Maria subiu para o nível 3!"). Empilha até 3. */
+  notify(message: string, durationMs = 4000) {
+    if (!this.sys.isActive()) return;
+    const { width } = this.scale;
+    const n = this.add
+      .text(width - 20, 76, message, {
+        fontFamily: FONT, fontSize: "17px", color: "#1b1f2a",
+        backgroundColor: "#f6d55c", padding: { x: 12, y: 8 }, wordWrap: { width: 420 },
+      })
+      .setOrigin(1, 0)
+      .setAlpha(0);
+    this.notices.push(n);
+    if (this.notices.length > 3) this.notices.shift()?.destroy();
+    this.layoutNotices();
+    this.tweens.add({ targets: n, alpha: 1, duration: 200 });
+    this.time.delayedCall(durationMs, () =>
+      this.tweens.add({
+        targets: n,
+        alpha: 0,
+        duration: 300,
+        onComplete: () => {
+          this.notices = this.notices.filter((x) => x !== n);
+          n.destroy();
+          this.layoutNotices();
+        },
+      }),
+    );
+  }
+
+  private layoutNotices() {
+    let y = 76;
+    for (const n of this.notices) {
+      n.setY(y);
+      y += n.height + 8;
+    }
   }
 
   /** Aplica o resultado de uma resposta: atualiza o HUD e comemora a subida de nível. */
@@ -101,5 +187,7 @@ export class UIScene extends Phaser.Scene {
   update() {
     // A dica fica escondida enquanto o diálogo está aberto (ocupariam o mesmo espaço).
     this.controlsHint.setVisible(!this.dialog.isOpen);
+    this.emoteButton.setVisible(!this.dialog.isOpen);
+    if (this.dialog.isOpen) this.emoteMenu.setVisible(false);
   }
 }

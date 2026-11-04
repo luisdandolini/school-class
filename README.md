@@ -6,7 +6,7 @@ Jogo educacional 2D (top-down) onde alunos exploram mundos temáticos, conversam
 
 ```
 apps/
-  backend/      API (Fastify) + futuro servidor de jogo (Colyseus) + Prisma
+  backend/      API (Fastify) + tempo real (WebSocket) + Prisma
   game/         Jogo em Phaser 3 (Vite + TypeScript)
   admin/        Painel do professor (React + Vite), servido em /admin
 packages/
@@ -58,13 +58,25 @@ pnpm typecheck                                   # checa tipos de todo o monorep
 pnpm dev:db:down                                 # para o banco
 ```
 
+## Multiplayer
+
+Alunos no mesmo mundo se veem em tempo real:
+
+- Nome e nível sobre cada colega; movimento suavizado (interpolação).
+- **Emotes e frases prontas** (teclas 1–6 ou botão "😀 Emotes"): 👋 Oi!, 🤝 Vamos juntos?, 🎉 Parabéns!, 🙋 Preciso de ajuda!, 😄 Que legal!, 🤔 Hmm... — **sem chat livre**, por segurança.
+- Quando alguém sobe de nível, os colegas online recebem um aviso.
+- Contador "👥 N pessoas no mundo"; o painel mostra quem está jogando agora em cada mundo.
+- Mesmo aluno em outra aba: a conexão antiga é encerrada.
+
+Implementado com WebSocket no próprio backend (`GET /api/realtime?worldId=...`, autenticado pelo cookie de sessão). O servidor valida tudo o que recebe (formato, limites do mapa, frequência de mensagens e emotes) e reconecta automaticamente se a conexão cair. Os jogadores ficam em memória: para mais de um processo do backend seria preciso um Redis (não necessário para uma escola).
+
 ## Painel do professor
 
 Em `/admin` (só contas de professor):
 
 - **Alunos:** cadastrar um a um ou a **turma inteira** colando a lista de nomes; usuários (`ana.souza`) e senhas fáceis de digitar (`gatonuvem47`) são gerados automaticamente. Editar, gerar nova senha e excluir.
 - **Cartões de acesso:** após cadastrar ou gerar nova senha, dá para copiar ou **imprimir cartões** com usuário e senha para recortar e entregar. As senhas só aparecem nesse momento.
-- **Mundos:** criar, editar e excluir mundos; matricular e remover alunos; botão **Testar no jogo**.
+- **Mundos:** quem está **jogando agora**; criar, editar e excluir mundos; matricular e remover alunos; botão **Testar no jogo**.
 - **NPCs:** nome, fala de boas-vindas, aparência e **posição escolhida clicando no mapa** (o painel bloqueia árvores, água, casa, o ponto de partida e lugares já ocupados).
 - **Tarefas:** criar e editar os 4 tipos com **pré-visualização** de como o aluno vê; reordenar; XP por tarefa; estatísticas (quantos concluíram, respostas, aguardando correção). Editar ou excluir tarefas já respondidas mostra um aviso — o XP já ganho pelos alunos nunca é retirado.
 - **Correções:** fila de respostas livres (com contador no menu). Marque como **correta** (o aluno ganha o XP) ou **precisa melhorar**, com um comentário opcional que o aluno vê no jogo — a NPC avisa e a janela do desafio mostra o comentário para ele refazer.
