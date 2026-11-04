@@ -64,10 +64,14 @@ Em `/admin` (só contas de professor):
 
 - **Alunos:** cadastrar um a um ou a **turma inteira** colando a lista de nomes; usuários (`ana.souza`) e senhas fáceis de digitar (`gatonuvem47`) são gerados automaticamente. Editar, gerar nova senha e excluir.
 - **Cartões de acesso:** após cadastrar ou gerar nova senha, dá para copiar ou **imprimir cartões** com usuário e senha para recortar e entregar. As senhas só aparecem nesse momento.
-- **Mundos:** ver os mundos, matricular e remover alunos.
+- **Mundos:** criar, editar e excluir mundos; matricular e remover alunos; botão **Testar no jogo**.
+- **NPCs:** nome, fala de boas-vindas, aparência e **posição escolhida clicando no mapa** (o painel bloqueia árvores, água, casa, o ponto de partida e lugares já ocupados).
+- **Tarefas:** criar e editar os 4 tipos com **pré-visualização** de como o aluno vê; reordenar; XP por tarefa; estatísticas (quantos concluíram, respostas, aguardando correção). Editar ou excluir tarefas já respondidas mostra um aviso — o XP já ganho pelos alunos nunca é retirado.
 - Cada professor só vê os alunos que cadastrou ou que estão nos mundos dele; só quem cadastrou pode excluir.
 
-Rotas: `/api/admin/students` (GET, POST), `/api/admin/students/bulk`, `/api/admin/students/:id` (PATCH, DELETE), `/api/admin/students/:id/reset-password`, `/api/admin/worlds`, `/api/admin/worlds/:id/students` (POST, DELETE).
+Rotas de conteúdo: `/api/admin/worlds` (POST), `/api/admin/worlds/:id` (GET, PATCH, DELETE), `/api/admin/worlds/:id/npcs` (POST), `/api/admin/npcs/:id` (PATCH, DELETE), `/api/admin/npcs/:id/tasks` (GET, POST), `/api/admin/npcs/:id/tasks/order` (PUT), `/api/admin/tasks/:id` (PUT, DELETE).
+
+Rotas de alunos: `/api/admin/students` (GET, POST), `/api/admin/students/bulk`, `/api/admin/students/:id` (PATCH, DELETE), `/api/admin/students/:id/reset-password`, `/api/admin/worlds`, `/api/admin/worlds/:id/students` (POST, DELETE).
 
 ## Tarefas e XP
 
@@ -134,7 +138,8 @@ pnpm --filter @school-class/game map:starter  # gera o mapa inicial (sobrescreve
   Camadas: `Chao`, `Objetos` (colide), `Topo` (desenhada por cima do jogador) e `Pontos` (objeto `spawn`).
 - Tiles com a propriedade `collides = true` bloqueiam a passagem.
 - Para trocar a arte, basta substituir os PNGs mantendo o layout (tiles 16x16; personagens com 3 quadros x 4 direções: baixo, esquerda, direita, cima).
-- Cada mundo no banco tem um `mapKey`, que é o nome do arquivo do mapa.
+- Cada mundo no banco tem um `mapKey`, que é o nome do arquivo do mapa. **Para um mapa novo aparecer no painel**, registre-o em `packages/shared/src/content.ts` (`MAPS`, com nome, largura e altura).
+- Aparências de NPC disponíveis ficam em `NPC_SPRITES` (mesmo arquivo).
 
 ## Fluxo de branches
 

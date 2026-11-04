@@ -2,6 +2,8 @@ import { defineConfig } from "vite";
 
 export default defineConfig({
   server: {
+    // Falha com aviso se a porta estiver ocupada (em vez de trocar de porta em silêncio).
+    strictPort: true,
     port: 5173,
     // Em dev, /api vai para o backend local (em produção quem faz isso é o Nginx).
     proxy: { "/api": "http://localhost:3000" },

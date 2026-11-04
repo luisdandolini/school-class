@@ -3,6 +3,7 @@ import type { AuthUser, TaskResult } from "@school-class/shared";
 import { logout } from "../auth/login";
 import { FONT } from "../config";
 import { DialogBox } from "../ui/DialogBox";
+import { switchWorld } from "../ui/worldSelect";
 import { Hud } from "../ui/Hud";
 import { TaskPanel } from "../ui/TaskPanel";
 
@@ -40,6 +41,20 @@ export class UIScene extends Phaser.Scene {
     exit.on("pointerover", () => exit.setBackgroundColor("#d9625e"));
     exit.on("pointerout", () => exit.setBackgroundColor("#c0504d"));
     exit.on("pointerdown", () => logout());
+
+    // Botão "Mundos", ao lado do Sair, quando o aluno tem mais de um mundo.
+    if ((this.registry.get("worldCount") as number) > 1) {
+      const worlds = this.add
+        .text(exit.x - exit.width - 10, 20, "🗺️ Mundos", {
+          fontFamily: FONT, fontSize: "18px", fontStyle: "bold", color: "#1b1f2a",
+          backgroundColor: "#f6d55c", padding: { x: 14, y: 8 },
+        })
+        .setOrigin(1, 0)
+        .setInteractive({ useHandCursor: true });
+      worlds.on("pointerover", () => worlds.setBackgroundColor("#ffe27a"));
+      worlds.on("pointerout", () => worlds.setBackgroundColor("#f6d55c"));
+      worlds.on("pointerdown", () => switchWorld());
+    }
 
     // Dica de controles, no canto inferior direito.
     this.controlsHint = this.add

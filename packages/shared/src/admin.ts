@@ -1,4 +1,5 @@
 /** Tipos usados pelo painel do professor (/api/admin). */
+import type { AdminNpc } from "./content.js";
 
 export interface WorldRef {
   id: string;
@@ -26,6 +27,10 @@ export interface AdminWorld {
   studentCount: number;
   npcCount: number;
   taskCount: number;
+}
+
+export interface AdminWorldDetail extends AdminWorld {
+  npcs: AdminNpc[];
 }
 
 export interface CreateStudentRequest {

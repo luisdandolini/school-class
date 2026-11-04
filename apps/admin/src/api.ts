@@ -1,12 +1,18 @@
 import type {
+  AdminNpc,
   AdminStudent,
+  AdminTask,
   AdminWorld,
+  AdminWorldDetail,
   AuthUser,
   BulkCreateStudentsRequest,
   CreateStudentRequest,
   LoginRequest,
+  NpcInput,
   StudentCredentials,
+  TaskInput,
   UpdateStudentRequest,
+  WorldInput,
 } from "@school-class/shared";
 
 export class ApiError extends Error {
@@ -59,6 +65,21 @@ export const api = {
   deleteStudent: (id: string) => request<void>("DELETE", `/admin/students/${id}`),
 
   worlds: () => request<AdminWorld[]>("GET", "/admin/worlds"),
+  world: (id: string) => request<AdminWorldDetail>("GET", `/admin/worlds/${id}`),
+  createWorld: (data: WorldInput) => request<AdminWorld>("POST", "/admin/worlds", data),
+  updateWorld: (id: string, data: Partial<WorldInput>) => request<AdminWorldDetail>("PATCH", `/admin/worlds/${id}`, data),
+  deleteWorld: (id: string) => request<void>("DELETE", `/admin/worlds/${id}`),
+
+  createNpc: (worldId: string, data: NpcInput) => request<AdminNpc>("POST", `/admin/worlds/${worldId}/npcs`, data),
+  updateNpc: (id: string, data: Partial<NpcInput>) => request<void>("PATCH", `/admin/npcs/${id}`, data),
+  deleteNpc: (id: string) => request<void>("DELETE", `/admin/npcs/${id}`),
+
+  npcTasks: (npcId: string) => request<{ npc: AdminNpc; tasks: AdminTask[] }>("GET", `/admin/npcs/${npcId}/tasks`),
+  createTask: (npcId: string, data: TaskInput) => request<AdminTask>("POST", `/admin/npcs/${npcId}/tasks`, data),
+  updateTask: (id: string, data: TaskInput) => request<AdminTask>("PUT", `/admin/tasks/${id}`, data),
+  deleteTask: (id: string) => request<void>("DELETE", `/admin/tasks/${id}`),
+  reorderTasks: (npcId: string, taskIds: string[]) => request<void>("PUT", `/admin/npcs/${npcId}/tasks/order`, { taskIds }),
+
   enroll: (worldId: string, studentIds: string[]) =>
     request<void>("POST", `/admin/worlds/${worldId}/students`, { studentIds }),
   unenroll: (worldId: string, studentId: string) =>

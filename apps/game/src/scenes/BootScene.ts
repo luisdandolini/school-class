@@ -3,6 +3,7 @@ import { api, ApiError } from "../api/client";
 import { CHARACTER_SPRITES, FONT } from "../config";
 import { createCharacterAnims } from "../entities/animations";
 import { logout } from "../auth/login";
+import { chooseWorld } from "../ui/worldSelect";
 
 /** Carrega a arte, busca o mundo no backend e então carrega o mapa desse mundo. */
 export class BootScene extends Phaser.Scene {
@@ -28,14 +29,17 @@ export class BootScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     try {
-      // Por enquanto entra no primeiro mundo do aluno. (Seleção de mundo virá depois.)
       const worlds = await api.listWorlds();
       if (worlds.length === 0) {
         status.setText("Você ainda não está em nenhum mundo.\nPeça ao seu professor para te adicionar a uma turma.");
         this.addLogoutButton(height / 2 + 90);
         return;
       }
-      const world = await api.getWorld(worlds[0].id);
+      status.setVisible(false);
+      const chosen = await chooseWorld(worlds);
+      status.setVisible(true);
+      this.registry.set("worldCount", worlds.length);
+      const world = await api.getWorld(chosen.id);
 
       this.load.tilemapTiledJSON(world.mapKey, `assets/maps/${world.mapKey}.json`);
       this.load.once(Phaser.Loader.Events.COMPLETE, () => this.scene.start("World", { world }));

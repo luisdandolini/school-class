@@ -160,3 +160,18 @@ canvas { image-rendering: pixelated; }
 @media (prefers-reduced-motion: reduce) {
   .task-overlay, .task-card, .task-card.shake { animation: none; }
 }
+
+/* ---------- Escolha de mundo ---------- */
+.world-card { width: min(460px, 100%); }
+.world-list { display: flex; flex-direction: column; gap: 10px; }
+.world-option {
+  font: inherit; text-align: left; cursor: pointer;
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 14px 16px; border-radius: 10px;
+  border: 3px solid var(--border); background: var(--bg); color: var(--text);
+}
+.world-option:hover { border-color: var(--accent); }
+.world-option:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+.world-option strong { font-size: 20px; }
+.world-option span { color: var(--muted); }
+.world-option em { align-self: flex-start; margin-top: 4px; font-style: normal; font-size: 12px; font-weight: 700; color: var(--accent-text); background: var(--accent); padding: 1px 8px; border-radius: 999px; }
