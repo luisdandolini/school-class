@@ -105,6 +105,10 @@ async function main() {
   const student = await upsertUser("aluno", "Aluno Exemplo", "aluno123", "STUDENT", teacher.id);
   const maria = await upsertUser("maria", "Maria", "maria123", "STUDENT", teacher.id);
   await upsertUser("joao", "João", "joao123", "STUDENT", teacher.id);
+  // Maria já vem com visual escolhido; o "aluno" escolhe o dele na primeira vez que entrar no jogo.
+  if (maria.avatar === null) {
+    await prisma.user.update({ where: { id: maria.id }, data: { avatar: { style: 1, skin: 2, hair: 1, shirt: 1 } } });
+  }
 
   const world =
     (await prisma.world.findFirst({ where: { name: "Mundo Inicial" } })) ??

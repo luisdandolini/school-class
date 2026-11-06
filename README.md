@@ -42,8 +42,8 @@ pnpm dev                                     # backend + jogo juntos
 
 | Usuário | Senha | Papel |
 |---|---|---|
-| `aluno` | `aluno123` | Aluno, no Mundo Inicial |
-| `maria` | `maria123` | Aluna, no Mundo Inicial |
+| `aluno` | `aluno123` | Aluno, no Mundo Inicial (monta o personagem ao entrar) |
+| `maria` | `maria123` | Aluna, no Mundo Inicial (já com personagem) |
 | `joao` | `joao123` | Aluno sem mundo (testa o acesso) |
 | `professor` | `professor123` | Professor, dono do Mundo Inicial |
 | `carla` | `carla123` | Outra professora, sem mundos (testa o isolamento) |
@@ -57,6 +57,14 @@ pnpm --filter @school-class/backend db:studio   # interface visual do banco
 pnpm typecheck                                   # checa tipos de todo o monorepo
 pnpm dev:db:down                                 # para o banco
 ```
+
+## Personagem do aluno
+
+Na primeira vez que entra no jogo, o aluno monta o personagem: **penteado** (curto, comprido, volumoso, raspado), **cor do cabelo**, **tom de pele** e **cor da roupa** (ou 🎲 sorteia). Depois, pode trocar a qualquer momento pelo botão **🎨 Visual**; os colegas online veem a mudança na hora. O painel mostra a miniatura de cada aluno (apagada para quem ainda não montou).
+
+- Só existem opções fixas (índices de paletas), validadas no servidor: `PUT /api/auth/me/avatar`.
+- Paletas e penteados ficam em `packages/shared/src/avatar.ts`.
+- A arte `avatar-base.png` tem, para cada penteado, uma camada base e máscaras de cabelo, pele e roupa, que são pintadas com as cores escolhidas (sem ler pixels do canvas, o que funciona também em navegadores com proteção contra fingerprinting, como o Brave).
 
 ## Multiplayer
 
@@ -146,7 +154,7 @@ docker compose exec backend node dist/seed.js
 A arte é provisória e gerada por código (sem licenças de terceiros):
 
 ```bash
-pnpm --filter @school-class/game assets       # gera tiles.png, player.png, npc.png
+pnpm --filter @school-class/game assets       # gera tiles.png, avatar-base.png, npc.png...
 pnpm --filter @school-class/game map:starter  # gera o mapa inicial (sobrescreve!)
 ```
 
@@ -156,6 +164,7 @@ pnpm --filter @school-class/game map:starter  # gera o mapa inicial (sobrescreve
 - Para trocar a arte, basta substituir os PNGs mantendo o layout (tiles 16x16; personagens com 3 quadros x 4 direções: baixo, esquerda, direita, cima).
 - Cada mundo no banco tem um `mapKey`, que é o nome do arquivo do mapa. **Para um mapa novo aparecer no painel**, registre-o em `packages/shared/src/content.ts` (`MAPS`, com nome, largura e altura).
 - Aparências de NPC disponíveis ficam em `NPC_SPRITES` (mesmo arquivo).
+- Para um penteado novo: desenhe-o em `HAIR_STYLES` no gerador de arte e acrescente o nome em `HAIR_STYLES` de `packages/shared/src/avatar.ts` (mesma ordem).
 
 ## Fluxo de branches
 

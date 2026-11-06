@@ -1,3 +1,4 @@
+import type { Avatar } from "./avatar.js";
 import type { TaskStatus, TaskType } from "./task.js";
 
 /** Resposta aberta aguardando correção, como o professor vê. */
@@ -30,6 +31,7 @@ export interface StudentReportRow {
   id: string;
   name: string;
   username: string;
+  avatar: Avatar | null;
   xp: number;
   level: number;
   completed: number;

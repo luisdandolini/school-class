@@ -1,4 +1,4 @@
-import type { AuthUser, LoginRequest, NpcTask, PublicWorld, TaskResult, WorldDetail } from "@school-class/shared";
+import type { AuthUser, Avatar, LoginRequest, NpcTask, PublicWorld, TaskResult, WorldDetail } from "@school-class/shared";
 
 /** Erro de API com o status HTTP (ex.: 401 = não logado). */
 export class ApiError extends Error {
@@ -36,6 +36,7 @@ export const api = {
       throw err;
     }
   },
+  setAvatar: (avatar: Avatar) => request<AuthUser>("PUT", "/auth/me/avatar", avatar),
   listWorlds: () => request<PublicWorld[]>("GET", "/worlds"),
   getWorld: (id: string) => request<WorldDetail>("GET", `/worlds/${id}`),
   npcTasks: (npcId: string) => request<NpcTask[]>("GET", `/npcs/${npcId}/tasks`),

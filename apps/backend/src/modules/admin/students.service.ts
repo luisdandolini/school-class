@@ -1,4 +1,4 @@
-import { levelFromXp, type AdminStudent, type StudentCredentials } from "@school-class/shared";
+import { levelFromXp, parseAvatar, type AdminStudent, type StudentCredentials } from "@school-class/shared";
 import { prisma } from "../../db.js";
 import { Prisma } from "../../generated/prisma/client.js";
 import { HttpError } from "../../lib/http-error.js";
@@ -34,6 +34,7 @@ function toAdminStudent(u: StudentRow, teacherId: string): AdminStudent {
     username: u.username,
     xp: u.xp,
     level: levelFromXp(u.xp),
+    avatar: parseAvatar(u.avatar),
     createdAt: u.createdAt.toISOString(),
     worlds: u.enrollments.map((e) => e.world),
     createdByMe: u.createdById === teacherId,

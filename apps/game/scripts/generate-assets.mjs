@@ -2,6 +2,9 @@
  * Gera a arte provisória do jogo (pixel art 16x16) em public/assets.
  *   - tiles.png  → tileset do mapa (8 colunas x 2 linhas)
  *   - player.png / npc.png → personagens (3 quadros x 4 direções)
+ *   - avatar-base.png → camadas do personagem dos alunos (ver packages/shared/src/avatar.ts):
+ *     uma faixa por penteado; colunas = base (contorno, calça, sapato) e máscaras brancas
+ *     de cabelo, pele e roupa, que o jogo pinta com as cores escolhidas
  *
  * Uso: pnpm --filter @school-class/game assets
  * Pode ser substituída por qualquer arte própria com o mesmo layout.
@@ -444,35 +447,185 @@ const LEGS = [
   ["....PPPPPPPP....", "....PPP..KKK....", "....KKK.........", "................"],
 ];
 
+/** Desenha os 12 quadros (3 x 4 direções) de um personagem a partir de (0, oy0). */
+function drawCharacter(png, oy0, pal, head = HEAD, overlay = {}) {
+  const dirs = [
+    { head: head.down, body: BODY_FRONT, over: overlay.down, mirror: false },
+    { head: head.left, body: BODY_SIDE, over: overlay.left, mirror: false },
+    { head: head.left, body: BODY_SIDE, over: overlay.left, mirror: true }, // direita = esquerda espelhada
+    { head: head.up, body: BODY_FRONT, over: overlay.up, mirror: false },
+  ];
+  dirs.forEach((d, row) => {
+    LEGS.forEach((legs, col) => {
+      const ox = col * T;
+      const oy = oy0 + row * T;
+      pattern(png, ox, oy, [...d.head, ...d.body], pal, d.mirror);
+      pattern(png, ox, oy + 12, legs, pal, d.mirror);
+      // Cabelo comprido cai por cima dos ombros.
+      if (d.over) pattern(png, ox, oy + 8, d.over, pal, d.mirror);
+      outline(png, ox, oy, T, T, C.outline);
+    });
+  });
+}
+
 function buildCharacter(name, colors) {
   const png = image(T * 3, T * 4);
-  const pal = {
+  drawCharacter(png, 0, {
     H: colors.hair,
     S: colors.skin,
     E: C.outline,
     B: colors.shirt,
     P: colors.pants,
     K: colors.shoes,
-  };
-  const dirs = [
-    { head: HEAD.down, body: BODY_FRONT, mirror: false },
-    { head: HEAD.left, body: BODY_SIDE, mirror: false },
-    { head: HEAD.left, body: BODY_SIDE, mirror: true }, // direita = esquerda espelhada
-    { head: HEAD.up, body: BODY_FRONT, mirror: false },
-  ];
-  dirs.forEach((d, row) => {
-    LEGS.forEach((legs, col) => {
-      const ox = col * T;
-      const oy = row * T;
-      pattern(png, ox, oy, [...d.head, ...d.body], pal, d.mirror);
-      pattern(png, ox, oy + 12, legs, pal, d.mirror);
-      outline(png, ox, oy, T, T, C.outline);
-    });
   });
   save(png, `${name}.png`);
 }
 
+// ---------- avatar dos alunos ----------
+// Penteados, na mesma ordem de HAIR_STYLES (packages/shared/src/avatar.ts).
+const HAIR_STYLES = [
+  // 0 curto
+  { head: HEAD },
+  // 1 comprido
+  {
+    head: {
+      down: [
+        "................",
+        "................",
+        ".....HHHHHH.....",
+        "....HHHHHHHH....",
+        "...HHHHHHHHHH...",
+        "...HHSSSSSSHH...",
+        "...HSSESSESSH...",
+        "...HHSSSSSSHH...",
+      ],
+      up: [
+        "................",
+        "................",
+        ".....HHHHHH.....",
+        "....HHHHHHHH....",
+        "...HHHHHHHHHH...",
+        "...HHHHHHHHHH...",
+        "...HHHHHHHHHH...",
+        "...HHHHHHHHHH...",
+      ],
+      left: [
+        "................",
+        "................",
+        ".....HHHHHH.....",
+        "....HHHHHHHH....",
+        "....HHHHHHHHH...",
+        "....SSSSSHHHH...",
+        "....SESSSSHHH...",
+        ".....SSSSSHHH...",
+      ],
+    },
+    overlay: {
+      down: ["...H........H...", "...H........H..."],
+      up: ["....HHHHHHHH....", "....HHHHHHHH...."],
+      left: ["..........HHH...", "..........HH...."],
+    },
+  },
+  // 2 volumoso
+  {
+    head: {
+      down: [
+        "................",
+        "....HHHHHHHH....",
+        "..HHHHHHHHHHHH..",
+        "..HHHHHHHHHHHH..",
+        "..HHHHHHHHHHHH..",
+        "..HHSSSSSSSSHH..",
+        "...HSSESSESSH...",
+        ".....SSSSSS.....",
+      ],
+      up: [
+        "................",
+        "....HHHHHHHH....",
+        "..HHHHHHHHHHHH..",
+        "..HHHHHHHHHHHH..",
+        "..HHHHHHHHHHHH..",
+        "..HHHHHHHHHHHH..",
+        "...HHHHHHHHHH...",
+        ".....SSSSSS.....",
+      ],
+      left: [
+        "................",
+        "....HHHHHHHH....",
+        "..HHHHHHHHHHHH..",
+        "..HHHHHHHHHHHH..",
+        "...HHHHHHHHHHH..",
+        "....SSSSSHHHHH..",
+        "....SESSSSHHH...",
+        ".....SSSSSS.....",
+      ],
+    },
+  },
+  // 3 raspado
+  {
+    head: {
+      down: [
+        "................",
+        "................",
+        ".....HHHHHH.....",
+        "....HHHHHHHH....",
+        "....SSSSSSSS....",
+        "....SSSSSSSS....",
+        "....SSESSESS....",
+        ".....SSSSSS.....",
+      ],
+      up: [
+        "................",
+        "................",
+        ".....HHHHHH.....",
+        "....HHHHHHHH....",
+        "....HHHHHHHH....",
+        "....SSSSSSSS....",
+        "....SSSSSSSS....",
+        ".....SSSSSS.....",
+      ],
+      left: [
+        "................",
+        "................",
+        ".....HHHHHH.....",
+        "....HHHHHHHH....",
+        "....SSSSSSHH....",
+        "....SSSSSSSS....",
+        "....SESSSSSS....",
+        ".....SSSSSS.....",
+      ],
+    },
+  },
+];
+
+/** Cores provisórias que marcam cada parte antes de separar as camadas. */
+const KEY = { hair: [255, 0, 0], skin: [0, 255, 0], shirt: [0, 0, 255] };
+/** Ordem das colunas de camadas (igual a AVATAR_LAYERS no pacote shared). */
+const LAYERS = ["base", "hair", "skin", "shirt"];
+
+function buildAvatarBase() {
+  const W = T * 3;
+  const H = T * 4;
+  const keyed = image(W, H * HAIR_STYLES.length);
+  const pal = { H: KEY.hair, S: KEY.skin, E: C.outline, B: KEY.shirt, P: [52, 54, 76], K: [92, 62, 40] };
+  HAIR_STYLES.forEach((style, i) => drawCharacter(keyed, i * H, pal, style.head, style.overlay));
+
+  // Separa as partes: cada cor provisória vira uma máscara branca na sua coluna.
+  const png = image(W * LAYERS.length, H * HAIR_STYLES.length);
+  for (let y = 0; y < keyed.height; y++)
+    for (let x = 0; x < W; x++) {
+      const i = (keyed.width * y + x) * 4;
+      if (keyed.data[i + 3] === 0) continue;
+      const c = [...keyed.data.subarray(i, i + 4)];
+      const part = Object.entries(KEY).find(([, k]) => k[0] === c[0] && k[1] === c[1] && k[2] === c[2])?.[0];
+      if (part) px(png, LAYERS.indexOf(part) * W + x, y, [255, 255, 255, 255]);
+      else px(png, x, y, c);
+    }
+  save(png, "avatar-base.png");
+}
+
 buildTileset();
+buildAvatarBase();
 buildCharacter("player", {
   hair: [86, 54, 34],
   skin: [240, 200, 160],

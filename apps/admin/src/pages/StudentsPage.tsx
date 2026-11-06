@@ -1,3 +1,4 @@
+import { AvatarIcon } from "../components/AvatarIcon";
 import { useMemo, useState, type FormEvent } from "react";
 import { USERNAME_PATTERN, type AdminStudent, type AdminWorld, type StudentCredentials } from "@school-class/shared";
 import { api, errorMessage } from "../api";
@@ -92,7 +93,7 @@ export function StudentsPage() {
             <tbody>
               {filtered.map((s) => (
                 <tr key={s.id}>
-                  <td><strong>{s.name}</strong></td>
+                  <td><span className="name-cell"><AvatarIcon avatar={s.avatar} /><strong>{s.name}</strong></span></td>
                   <td><code>{s.username}</code></td>
                   <td><span className="level">Nv. {s.level}</span> <span className="muted">{s.xp} XP</span></td>
                   <td>

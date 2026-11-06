@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { WS_CLOSE, type ServerMessage } from "@school-class/shared";
+import { DEFAULT_AVATAR, WS_CLOSE, type ServerMessage } from "@school-class/shared";
 import { EMOTE_COOLDOWN_MS, Hub, MOVE_INTERVAL_MS, type Connection } from "./hub.js";
 
 function fakeConn() {
@@ -10,14 +10,15 @@ function fakeConn() {
 }
 const bounds = { width: 480, height: 320 };
 const W = "mundo";
+const AV = DEFAULT_AVATAR;
 
 function setup() {
   const hub = new Hub();
   const ana = fakeConn();
   const bia = fakeConn();
-  hub.join(W, { id: "ana", name: "Ana", level: 1 }, ana.conn, bounds);
+  hub.join(W, { id: "ana", name: "Ana", level: 1, avatar: AV }, ana.conn, bounds);
   hub.move(W, "ana", 100, 100, "down", false, 1000);
-  hub.join(W, { id: "bia", name: "Bia", level: 2 }, bia.conn, bounds);
+  hub.join(W, { id: "bia", name: "Bia", level: 2, avatar: AV }, bia.conn, bounds);
   return { hub, ana, bia };
 }
 
@@ -72,7 +73,7 @@ describe("Hub (salas do tempo real)", () => {
     const { hub, ana, bia } = setup();
     hub.move(W, "bia", 1, 1, "down", false, 1000);
     const ana2 = fakeConn();
-    hub.join(W, { id: "ana", name: "Ana", level: 1 }, ana2.conn, bounds);
+    hub.join(W, { id: "ana", name: "Ana", level: 1, avatar: AV }, ana2.conn, bounds);
     expect(ana.sent).toContainEqual({ t: "replaced" });
     expect(ana.closed).toEqual([WS_CLOSE.replaced]);
     expect(bia.last()).toEqual({ t: "leave", id: "ana" });
@@ -97,7 +98,7 @@ describe("Hub (salas do tempo real)", () => {
     expect(bia.last()).toEqual({ t: "levelup", id: "ana", name: "Ana", level: 3 });
     expect(ana.sent.some((m) => m.t === "levelup")).toBe(false);
     const carol = fakeConn();
-    hub.join(W, { id: "carol", name: "Carol", level: 1 }, carol.conn, bounds);
+    hub.join(W, { id: "carol", name: "Carol", level: 1, avatar: AV }, carol.conn, bounds);
     expect(carol.sent[0]).toMatchObject({ players: expect.arrayContaining([expect.objectContaining({ id: "ana", level: 3 })]) });
   });
 
@@ -105,11 +106,23 @@ describe("Hub (salas do tempo real)", () => {
     const hub = new Hub();
     const a = fakeConn();
     const b = fakeConn();
-    hub.join("m1", { id: "a", name: "A", level: 1 }, a.conn, bounds);
-    hub.join("m2", { id: "b", name: "B", level: 1 }, b.conn, bounds);
+    hub.join("m1", { id: "a", name: "A", level: 1, avatar: AV }, a.conn, bounds);
+    hub.join("m2", { id: "b", name: "B", level: 1, avatar: AV }, b.conn, bounds);
     hub.move("m1", "a", 1, 1, "down", false, 1000);
     hub.move("m2", "b", 1, 1, "down", false, 1000);
     hub.emote("m1", "a", "oi", 5000);
     expect(b.sent.some((m) => m.t === "join" || m.t === "emote")).toBe(false);
+  });
+
+  it("troca de visual chega aos colegas e a quem entra depois", () => {
+    const { hub, ana, bia } = setup();
+    hub.move(W, "bia", 50, 60, "left", true, 1000);
+    const novo = { style: 2, skin: 3, hair: 4, shirt: 5 };
+    hub.avatarChanged("ana", novo);
+    expect(bia.last()).toEqual({ t: "avatar", id: "ana", avatar: novo });
+    expect(ana.sent.some((m) => m.t === "avatar")).toBe(false);
+    const carol = fakeConn();
+    hub.join(W, { id: "carol", name: "Carol", level: 1, avatar: AV }, carol.conn, bounds);
+    expect(carol.sent[0]).toMatchObject({ players: expect.arrayContaining([expect.objectContaining({ id: "ana", avatar: novo })]) });
   });
 });

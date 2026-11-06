@@ -11,9 +11,11 @@ export class RemotePlayer extends Phaser.GameObjects.Sprite {
   private label: Phaser.GameObjects.Text;
   readonly playerId: string;
   private name_: string;
+  private skin: string;
 
-  constructor(scene: Phaser.Scene, state: RemotePlayerState) {
-    super(scene, state.x, state.y, "player", idleFrame(state.facing));
+  constructor(scene: Phaser.Scene, state: RemotePlayerState, skin: string) {
+    super(scene, state.x, state.y, skin, idleFrame(state.facing));
+    this.skin = skin;
     this.playerId = state.id;
     this.name_ = state.name;
     this.target = { x: state.x, y: state.y };
@@ -42,6 +44,13 @@ export class RemotePlayer extends Phaser.GameObjects.Sprite {
     this.label.setText(`${this.name_} · Nv ${level}`);
   }
 
+  setSkin(skin: string) {
+    this.skin = skin;
+    this.anims.stop();
+    this.setTexture(skin, idleFrame(this.facing));
+    this.applyAnimation();
+  }
+
   setState_(x: number, y: number, facing: Facing, moving: boolean) {
     this.target = { x, y };
     const changed = facing !== this.facing || moving !== this.moving;
@@ -51,7 +60,7 @@ export class RemotePlayer extends Phaser.GameObjects.Sprite {
   }
 
   private applyAnimation() {
-    if (this.moving) this.anims.play(`player-walk-${this.facing}`, true);
+    if (this.moving) this.anims.play(`${this.skin}-walk-${this.facing}`, true);
     else {
       this.anims.stop();
       this.setFrame(idleFrame(this.facing));

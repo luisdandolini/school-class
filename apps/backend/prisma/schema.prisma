@@ -27,6 +27,8 @@ model User {
   passwordHash String
   role         Role     @default(STUDENT)
   xp           Int      @default(0)
+  /// Visual do personagem ({ style, skin, hair, shirt }); null = ainda não escolheu.
+  avatar       Json?
   createdAt    DateTime @default(now())
   /// Professor que cadastrou este aluno (null para professores).
   createdById  String?

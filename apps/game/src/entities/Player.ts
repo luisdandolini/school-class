@@ -11,9 +11,12 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   frozen = false;
   private keys: Keys;
   private label: Phaser.GameObjects.Text;
+  /** Textura do avatar (ex.: "avatar-1-2-0-5"); as animações usam o mesmo nome. */
+  private skin: string;
 
-  constructor(scene: Phaser.Scene, x: number, y: number, name: string) {
-    super(scene, x, y, "player", idleFrame("down"));
+  constructor(scene: Phaser.Scene, x: number, y: number, name: string, skin: string) {
+    super(scene, x, y, skin, idleFrame("down"));
+    this.skin = skin;
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
@@ -37,6 +40,13 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }) as Keys;
   }
 
+  /** Troca o visual (mantendo a direção). */
+  setSkin(skin: string) {
+    this.skin = skin;
+    this.anims.stop();
+    this.setTexture(skin, idleFrame(this.facing));
+  }
+
   update() {
     const k = this.keys;
     let vx = 0;
@@ -54,7 +64,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     if (vx !== 0 || vy !== 0) {
       this.facing = vx !== 0 ? (vx < 0 ? "left" : "right") : vy < 0 ? "up" : "down";
-      this.anims.play(`player-walk-${this.facing}`, true);
+      this.anims.play(`${this.skin}-walk-${this.facing}`, true);
     } else {
       this.anims.stop();
       this.setFrame(idleFrame(this.facing));

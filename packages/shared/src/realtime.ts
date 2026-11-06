@@ -1,4 +1,5 @@
 /** Protocolo do tempo real (WebSocket em /api/realtime?worldId=...). */
+import type { Avatar } from "./avatar.js";
 
 export type Facing = "down" | "left" | "right" | "up";
 
@@ -19,6 +20,7 @@ export interface RemotePlayerState {
   id: string;
   name: string;
   level: number;
+  avatar: Avatar;
   x: number;
   y: number;
   facing: Facing;
@@ -38,6 +40,8 @@ export type ServerMessage =
   | { t: "move"; id: string; x: number; y: number; facing: Facing; moving: boolean }
   | { t: "emote"; id: string; emote: EmoteId }
   | { t: "levelup"; id: string; name: string; level: number }
+  /** Um colega trocou o visual. */
+  | { t: "avatar"; id: string; avatar: Avatar }
   /** Esta conexão foi substituída (o mesmo aluno abriu o jogo em outra aba). */
   | { t: "replaced" };
 

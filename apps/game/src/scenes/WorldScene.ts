@@ -1,11 +1,13 @@
 import Phaser from "phaser";
-import { EMOTES, WS_CLOSE, type AuthUser, type NpcTask, type ServerMessage, type TaskResult, type WorldDetail } from "@school-class/shared";
+import { EMOTES, WS_CLOSE, type AuthUser, type NpcTask, type RemotePlayerState, type ServerMessage, type TaskResult, type WorldDetail } from "@school-class/shared";
 import { api, ApiError } from "../api/client";
+import { AVATAR_BASE, ensureAvatarTexture } from "../avatar";
 import { DEPTH, FONT, INTERACT_DISTANCE, WORLD_ZOOM } from "../config";
 import { Npc } from "../entities/Npc";
 import { Player } from "../entities/Player";
 import { RemotePlayer } from "../entities/RemotePlayer";
 import { Realtime } from "../net/Realtime";
+import { editAvatar } from "../ui/avatarCreator";
 import { showBubble } from "../ui/bubble";
 import type { UIScene } from "./UIScene";
 
@@ -37,7 +39,8 @@ export class WorldScene extends Phaser.Scene {
     // --- jogador ---
     const spawn = map.findObject("Pontos", (o) => o.name === "spawn");
     const user = this.registry.get("user") as AuthUser;
-    this.player = new Player(this, spawn?.x ?? map.widthInPixels / 2, spawn?.y ?? map.heightInPixels / 2, user.name);
+    const skin = ensureAvatarTexture(this, user.avatar);
+    this.player = new Player(this, spawn?.x ?? map.widthInPixels / 2, spawn?.y ?? map.heightInPixels / 2, user.name, skin);
     this.physics.add.collider(this.player, [ground, objects]);
 
     // --- NPCs (vindos do backend) ---
@@ -63,6 +66,7 @@ export class WorldScene extends Phaser.Scene {
     const digits = [K.ONE, K.TWO, K.THREE, K.FOUR, K.FIVE, K.SIX];
     EMOTES.forEach((e, i) => this.input.keyboard!.addKey(digits[i]).on("down", () => this.sendEmote(i)));
     this.ui.events.on("emote", (i: number) => this.sendEmote(i));
+    this.ui.events.on("edit-avatar", () => void this.changeAvatar());
 
     this.connectRealtime(world.id);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.realtime?.destroy());
@@ -79,12 +83,12 @@ export class WorldScene extends Phaser.Scene {
       // Ao (re)conectar, a lista do servidor é a verdade.
       this.remotes.forEach((r) => r.destroy());
       this.remotes.clear();
-      m.players.forEach((p) => this.remotes.set(p.id, new RemotePlayer(this, p)));
+      m.players.forEach((p) => this.remotes.set(p.id, this.addRemote(p)));
       countOnline();
     });
     rt.on("join", (m: Extract<ServerMessage, { t: "join" }>) => {
       this.remotes.get(m.player.id)?.destroy();
-      const r = new RemotePlayer(this, m.player);
+      const r = this.addRemote(m.player);
       this.remotes.set(m.player.id, r);
       showBubble(this, r, "👋", 1500);
       countOnline();
@@ -108,6 +112,9 @@ export class WorldScene extends Phaser.Scene {
       }
       this.ui.notify(`🎉 ${m.name} subiu para o nível ${m.level}!`);
     });
+    rt.on("avatar", (m: Extract<ServerMessage, { t: "avatar" }>) => {
+      this.remotes.get(m.id)?.setSkin(ensureAvatarTexture(this, m.avatar));
+    });
     rt.on("status", countOnline);
     // A interface é criada logo depois desta cena: atualiza o contador quando ela estiver pronta.
     this.ui.events.once(Phaser.Scenes.Events.CREATE, countOnline);
@@ -123,6 +130,27 @@ export class WorldScene extends Phaser.Scene {
       this.ui.setOnline(null, false);
     });
     countOnline();
+  }
+
+  private addRemote(state: RemotePlayerState) {
+    return new RemotePlayer(this, state, ensureAvatarTexture(this, state.avatar));
+  }
+
+  /** Botão "🎨 Visual": abre a tela de personagem e aplica a escolha. */
+  private async changeAvatar() {
+    if (this.talkingTo || this.player.frozen) return;
+    this.player.frozen = true;
+    try {
+      const user = this.registry.get("user") as AuthUser;
+      const base = this.textures.get(AVATAR_BASE).getSourceImage() as HTMLImageElement;
+      const updated = await this.withKeyboardPaused(() => editAvatar(base, user.avatar));
+      if (!updated) return;
+      this.registry.set("user", updated);
+      this.player.setSkin(ensureAvatarTexture(this, updated.avatar));
+      showBubble(this, this.player, "✨");
+    } finally {
+      this.player.frozen = false;
+    }
   }
 
   private sendEmote(index: number) {

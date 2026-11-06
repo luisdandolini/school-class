@@ -1,8 +1,9 @@
 import type { FastifyInstance } from "fastify";
-import type { AuthUser } from "@school-class/shared";
+import { HAIR_COLORS, HAIR_STYLES, SHIRT_COLORS, SKIN_TONES, type AuthUser } from "@school-class/shared";
 import { z } from "zod";
 import { prisma } from "../../db.js";
 import { env } from "../../env.js";
+import { hub } from "../realtime/hub.js";
 import { SESSION_COOKIE, SESSION_MAX_AGE } from "../../plugins/auth.js";
 import { toAuthUser } from "./auth.service.js";
 import { DUMMY_HASH, verifyPassword } from "./password.js";
@@ -10,6 +11,14 @@ import { DUMMY_HASH, verifyPassword } from "./password.js";
 const loginSchema = z.object({
   username: z.string().trim().toLowerCase().min(1).max(50),
   password: z.string().min(1).max(200),
+});
+
+const index = (n: number) => z.number().int().min(0).max(n - 1);
+const avatarSchema = z.object({
+  style: index(HAIR_STYLES.length),
+  skin: index(SKIN_TONES.length),
+  hair: index(HAIR_COLORS.length),
+  shirt: index(SHIRT_COLORS.length),
 });
 
 const cookieOptions = {
@@ -53,4 +62,16 @@ export async function authRoutes(app: FastifyInstance) {
     }
     return toAuthUser(user);
   });
+
+  /** Escolhe ou troca o visual do personagem. Os colegas online veem a mudança na hora. */
+  app.put(
+    "/auth/me/avatar",
+    { preHandler: app.authenticate, config: { rateLimit: { max: 30, timeWindow: "1 minute" } } },
+    async (request): Promise<AuthUser> => {
+      const avatar = avatarSchema.parse(request.body);
+      const user = await prisma.user.update({ where: { id: request.user.sub }, data: { avatar } });
+      hub.avatarChanged(user.id, avatar);
+      return toAuthUser(user);
+    },
+  );
 }

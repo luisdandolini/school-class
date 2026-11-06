@@ -1,8 +1,11 @@
 import Phaser from "phaser";
+import type { AuthUser } from "@school-class/shared";
 import { api, ApiError } from "../api/client";
+import { AVATAR_BASE } from "../avatar";
 import { CHARACTER_SPRITES, FONT } from "../config";
 import { createCharacterAnims } from "../entities/animations";
 import { logout } from "../auth/login";
+import { editAvatar } from "../ui/avatarCreator";
 import { chooseWorld } from "../ui/worldSelect";
 
 /** Carrega a arte, busca o mundo no backend e então carrega o mapa desse mundo. */
@@ -13,6 +16,7 @@ export class BootScene extends Phaser.Scene {
 
   preload() {
     this.load.image("tiles", "assets/tiles.png");
+    this.load.image(AVATAR_BASE, "assets/avatar-base.png");
     for (const key of CHARACTER_SPRITES) {
       this.load.spritesheet(key, `assets/${key}.png`, { frameWidth: 16, frameHeight: 16 });
     }
@@ -36,6 +40,13 @@ export class BootScene extends Phaser.Scene {
         return;
       }
       status.setVisible(false);
+      // Primeira vez no jogo: monta o personagem antes de entrar.
+      const user = this.registry.get("user") as AuthUser;
+      if (!user.avatar) {
+        const base = this.textures.get(AVATAR_BASE).getSourceImage() as HTMLImageElement;
+        const updated = await editAvatar(base, null, { firstTime: true });
+        if (updated) this.registry.set("user", updated);
+      }
       const chosen = await chooseWorld(worlds);
       status.setVisible(true);
       this.registry.set("worldCount", worlds.length);

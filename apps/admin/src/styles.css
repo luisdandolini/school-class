@@ -318,3 +318,8 @@ ul, ol { padding-left: 20px; }
 .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 3px #2e8b4733; }
 .dot-off { background: #b9bfd0; box-shadow: none; }
 .online-names { margin: 6px 0 0; }
+
+/* Personagem do aluno nas tabelas */
+.avatar-icon { image-rendering: pixelated; vertical-align: middle; flex-shrink: 0; }
+.avatar-icon-empty { opacity: 0.35; filter: grayscale(1); }
+.name-cell { display: inline-flex; align-items: center; gap: 8px; }

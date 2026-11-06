@@ -1,4 +1,5 @@
 /** Tipos usados pelo painel do professor (/api/admin). */
+import type { Avatar } from "./avatar.js";
 import type { AdminNpc } from "./content.js";
 
 export interface WorldRef {
@@ -12,6 +13,7 @@ export interface AdminStudent {
   username: string;
   xp: number;
   level: number;
+  avatar: Avatar | null;
   createdAt: string;
   /** Mundos DO PROFESSOR em que o aluno está matriculado. */
   worlds: WorldRef[];

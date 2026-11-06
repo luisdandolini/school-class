@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import websocket from "@fastify/websocket";
-import { EMOTE_IDS, MAPS, WS_CLOSE, levelFromXp, type EmoteId, type MapKey, type ServerMessage } from "@school-class/shared";
+import { DEFAULT_AVATAR, EMOTE_IDS, MAPS, WS_CLOSE, levelFromXp, parseAvatar, type EmoteId, type MapKey, type ServerMessage } from "@school-class/shared";
 import type { WebSocket } from "ws";
 import { z } from "zod";
 import { prisma } from "../../db.js";
@@ -69,7 +69,13 @@ export async function realtimeRoutes(app: FastifyInstance) {
       close: (code, reason) => socket.close(code, reason),
     };
 
-    hub.join(world.id, { id: user.id, name: user.name, level: levelFromXp(user.xp) }, conn, {
+    const player = {
+      id: user.id,
+      name: user.name,
+      level: levelFromXp(user.xp),
+      avatar: parseAvatar(user.avatar) ?? DEFAULT_AVATAR,
+    };
+    hub.join(world.id, player, conn, {
       width: map.width * TILE,
       height: map.height * TILE,
     });

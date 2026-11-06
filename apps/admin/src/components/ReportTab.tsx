@@ -1,3 +1,4 @@
+import { AvatarIcon } from "./AvatarIcon";
 import { useState } from "react";
 import type { AdminWorld, StudentReportRow } from "@school-class/shared";
 import { api } from "../api";
@@ -48,7 +49,7 @@ export function ReportTab({ world }: { world: AdminWorld }) {
           <tbody>
             {students.map((s) => (
               <tr key={s.id} className="row-link" onClick={() => setStudent(s)} tabIndex={0} onKeyDown={(e) => e.key === "Enter" && setStudent(s)}>
-                <td><strong>{s.name}</strong><br /><code className="muted small">{s.username}</code></td>
+                <td><span className="name-cell"><AvatarIcon avatar={s.avatar} /><span><strong>{s.name}</strong><br /><code className="muted small">{s.username}</code></span></span></td>
                 <td>
                   <div className="progress" aria-label={`${s.completed} de ${s.total} tarefas`}>
                     <div className="progress-bar" style={{ width: percent(s.completed / s.total) }} />

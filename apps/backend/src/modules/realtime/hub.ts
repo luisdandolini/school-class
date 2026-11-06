@@ -1,5 +1,6 @@
 import {
   EMOTE_IDS,
+  type Avatar,
   WS_CLOSE,
   type EmoteId,
   type Facing,
@@ -53,7 +54,7 @@ export class Hub {
 
   join(
     worldId: string,
-    user: { id: string; name: string; level: number },
+    user: { id: string; name: string; level: number; avatar: Avatar },
     conn: Connection,
     bounds: { width: number; height: number },
   ) {
@@ -70,7 +71,7 @@ export class Hub {
 
     room.set(user.id, {
       conn,
-      state: { id: user.id, name: user.name, level: user.level, x: 0, y: 0, facing: "down", moving: false },
+      state: { id: user.id, name: user.name, level: user.level, avatar: user.avatar, x: 0, y: 0, facing: "down", moving: false },
       ready: false,
       joinedAt: new Date(),
       lastMoveAt: 0,
@@ -129,6 +130,16 @@ export class Hub {
       if (!m) continue;
       m.state.level = level;
       this.broadcast(worldId, { t: "levelup", id: userId, name: m.state.name, level }, userId);
+    }
+  }
+
+  /** Avisa os mundos onde o jogador está que ele trocou o visual. */
+  avatarChanged(userId: string, avatar: Avatar) {
+    for (const [worldId, room] of this.rooms) {
+      const m = room.get(userId);
+      if (!m) continue;
+      m.state.avatar = { ...avatar };
+      this.broadcast(worldId, { t: "avatar", id: userId, avatar: { ...avatar } }, userId);
     }
   }
 

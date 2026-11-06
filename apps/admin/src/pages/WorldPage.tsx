@@ -1,3 +1,4 @@
+import { AvatarIcon } from "../components/AvatarIcon";
 import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import { MAPS, type AdminStudent, type AdminWorld, type AdminWorldDetail, type MapKey } from "@school-class/shared";
@@ -196,7 +197,7 @@ function StudentsTab({ world, onChange }: { world: AdminWorld; onChange: () => v
             <tbody>
               {enrolled.data?.map((s) => (
                 <tr key={s.id}>
-                  <td><strong>{s.name}</strong></td>
+                  <td><span className="name-cell"><AvatarIcon avatar={s.avatar} /><strong>{s.name}</strong></span></td>
                   <td><code>{s.username}</code></td>
                   <td><span className="level">Nv. {s.level}</span> <span className="muted">{s.xp} XP</span></td>
                   <td className="col-actions">

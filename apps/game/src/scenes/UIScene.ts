@@ -50,10 +50,24 @@ export class UIScene extends Phaser.Scene {
     exit.on("pointerout", () => exit.setBackgroundColor("#c0504d"));
     exit.on("pointerdown", () => logout());
 
-    // Botão "Mundos", ao lado do Sair, quando o aluno tem mais de um mundo.
+    // Botão "Visual" (trocar o personagem), ao lado do Sair.
+    const look = this.add
+      .text(exit.x - exit.width - 10, 20, "🎨 Visual", {
+        fontFamily: FONT, fontSize: "18px", fontStyle: "bold", color: "#1b1f2a",
+        backgroundColor: "#f6d55c", padding: { x: 14, y: 8 },
+      })
+      .setOrigin(1, 0)
+      .setInteractive({ useHandCursor: true });
+    look.on("pointerover", () => look.setBackgroundColor("#ffe27a"));
+    look.on("pointerout", () => look.setBackgroundColor("#f6d55c"));
+    look.on("pointerdown", () => {
+      if (!this.dialog.isOpen) this.events.emit("edit-avatar");
+    });
+
+    // Botão "Mundos", quando o aluno tem mais de um mundo.
     if ((this.registry.get("worldCount") as number) > 1) {
       const worlds = this.add
-        .text(exit.x - exit.width - 10, 20, "🗺️ Mundos", {
+        .text(look.x - look.width - 10, 20, "🗺️ Mundos", {
           fontFamily: FONT, fontSize: "18px", fontStyle: "bold", color: "#1b1f2a",
           backgroundColor: "#f6d55c", padding: { x: 14, y: 8 },
         })

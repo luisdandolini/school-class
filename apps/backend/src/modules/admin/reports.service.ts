@@ -1,4 +1,4 @@
-import { levelFromXp, type StudentTaskProgress, type WorldReport } from "@school-class/shared";
+import { levelFromXp, parseAvatar, type StudentTaskProgress, type WorldReport } from "@school-class/shared";
 import { prisma } from "../../db.js";
 import { HttpError } from "../../lib/http-error.js";
 
@@ -35,6 +35,7 @@ export async function worldReport(teacherId: string, worldId: string): Promise<W
         id: user.id,
         name: user.name,
         username: user.username,
+        avatar: parseAvatar(user.avatar),
         xp: user.xp,
         level: levelFromXp(user.xp),
         completed: completions.filter((c) => c.userId === user.id).length,
