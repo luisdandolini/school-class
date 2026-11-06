@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { FEEDBACK_MAX_LENGTH } from "@school-class/shared";
 import { z } from "zod";
-import { worldReport, studentProgress } from "./reports.service.js";
+import { worldReport, studentAchievements, studentProgress } from "./reports.service.js";
 import { countPendingReviews, listPendingReviews, reviewSubmission } from "./reviews.service.js";
 
 const id = z.string().min(1);
@@ -34,5 +34,10 @@ export async function reviewRoutes(app: FastifyInstance) {
   app.get("/admin/worlds/:worldId/students/:studentId/progress", async (request) => {
     const { worldId, studentId } = z.object({ worldId: id, studentId: id }).parse(request.params);
     return studentProgress(request.user.sub, worldId, studentId);
+  });
+
+  app.get("/admin/worlds/:worldId/students/:studentId/achievements", async (request) => {
+    const { worldId, studentId } = z.object({ worldId: id, studentId: id }).parse(request.params);
+    return studentAchievements(request.user.sub, worldId, studentId);
   });
 }

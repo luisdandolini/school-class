@@ -1,6 +1,7 @@
-import { levelFromXp, parseAvatar, type StudentTaskProgress, type WorldReport } from "@school-class/shared";
+import { levelFromXp, parseAvatar, type EarnedAchievement, type StudentTaskProgress, type WorldReport } from "@school-class/shared";
 import { prisma } from "../../db.js";
 import { HttpError } from "../../lib/http-error.js";
+import { listAchievements } from "../achievements/achievements.service.js";
 
 async function ownWorld(teacherId: string, worldId: string) {
   const world = await prisma.world.findFirst({ where: { id: worldId, ownerId: teacherId } });
@@ -19,12 +20,13 @@ export async function worldReport(teacherId: string, worldId: string): Promise<W
   const taskIds = tasks.map((t) => t.id);
   const userIds = enrollments.map((e) => e.userId);
 
-  const [completions, submissions] = await Promise.all([
+  const [completions, submissions, medals] = await Promise.all([
     prisma.taskCompletion.findMany({ where: { taskId: { in: taskIds } }, select: { userId: true, taskId: true } }),
     prisma.submission.findMany({
       where: { taskId: { in: taskIds } },
       select: { userId: true, taskId: true, correct: true, createdAt: true },
     }),
+    prisma.achievement.groupBy({ by: ["userId"], where: { userId: { in: userIds } }, _count: { _all: true } }),
   ]);
 
   const students = enrollments
@@ -43,6 +45,7 @@ export async function worldReport(teacherId: string, worldId: string): Promise<W
         pendingReview: subs.filter((s) => s.correct === null).length,
         wrongAttempts: subs.filter((s) => s.correct === false).length,
         lastActivity: last?.toISOString() ?? null,
+        achievements: medals.find((m) => m.userId === user.id)?._count._all ?? 0,
       };
     })
     .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
@@ -103,4 +106,18 @@ export async function studentProgress(teacherId: string, worldId: string, studen
       xpGained: done?.xpGained ?? 0,
     };
   });
+}
+
+/**
+ * Conquistas de um aluno matriculado num mundo do professor.
+ * "Mundo concluído" de mundos de outros professores aparece sem o nome do mundo.
+ */
+export async function studentAchievements(teacherId: string, worldId: string, studentId: string): Promise<EarnedAchievement[]> {
+  await ownWorld(teacherId, worldId);
+  const enrolled = await prisma.enrollment.findUnique({ where: { userId_worldId: { userId: studentId, worldId } } });
+  if (!enrolled) throw new HttpError(404, "Aluno não está neste mundo");
+  const mine = new Set((await prisma.world.findMany({ where: { ownerId: teacherId }, select: { id: true } })).map((w) => w.id));
+  return (await listAchievements(studentId)).map((a) =>
+    a.worldId && !mine.has(a.worldId) ? { ...a, worldId: null, worldName: null } : a,
+  );
 }

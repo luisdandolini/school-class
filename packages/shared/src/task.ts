@@ -1,3 +1,4 @@
+import type { EarnedAchievement } from "./achievements.js";
 import type { AuthUser } from "./auth.js";
 
 /** Tipos de tarefa que um NPC pode passar ao aluno. */
@@ -56,4 +57,6 @@ export interface TaskResult {
   leveledUp: boolean;
   /** Usuário atualizado (XP e nível), para o HUD. */
   user: AuthUser;
+  /** Conquistas ganhas com esta resposta (para comemorar). */
+  achievements: EarnedAchievement[];
 }

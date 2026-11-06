@@ -39,6 +39,8 @@ export interface StudentReportRow {
   pendingReview: number;
   wrongAttempts: number;
   lastActivity: string | null;
+  /** Quantas conquistas o aluno tem (em todos os mundos). */
+  achievements: number;
 }
 
 /** Linha do relatório: uma tarefa, para achar as mais difíceis. */

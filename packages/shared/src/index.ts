@@ -1,3 +1,4 @@
+export * from "./achievements.js";
 export * from "./avatar.js";
 export * from "./admin.js";
 export * from "./auth.js";

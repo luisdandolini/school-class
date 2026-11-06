@@ -3,6 +3,7 @@ import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
 import { ZodError } from "zod";
 import authPlugin from "./plugins/auth.js";
+import { achievementsRoutes } from "./modules/achievements/achievements.routes.js";
 import { adminRoutes } from "./modules/admin/admin.routes.js";
 import { authRoutes } from "./modules/auth/auth.routes.js";
 import { healthRoutes } from "./modules/health/health.routes.js";
@@ -51,6 +52,7 @@ export async function buildApp() {
       await api.register(authRoutes);
       await api.register(worldRoutes);
       await api.register(taskRoutes);
+      await api.register(achievementsRoutes);
       await api.register(adminRoutes);
       await api.register(realtimeRoutes);
     },

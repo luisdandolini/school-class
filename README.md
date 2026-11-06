@@ -66,6 +66,26 @@ Na primeira vez que entra no jogo, o aluno monta o personagem: **penteado** (cur
 - Paletas e penteados ficam em `packages/shared/src/avatar.ts`.
 - A arte `avatar-base.png` tem, para cada penteado, uma camada base e máscaras de cabelo, pele e roupa, que são pintadas com as cores escolhidas (sem ler pixels do canvas, o que funciona também em navegadores com proteção contra fingerprinting, como o Brave).
 
+## Conquistas (medalhas)
+
+O aluno ganha medalhas pelo que faz no jogo, com uma comemoração na tela; os colegas online recebem um aviso ("🏅 Maria ganhou a medalha “Em chamas”!"). O botão **🏅 Medalhas** mostra as conquistadas e as que faltam (com a dica de como ganhar).
+
+| Medalha | Como ganhar |
+|---|---|
+| 👣 Primeiro passo | Concluir a primeira tarefa |
+| 💪 Volta por cima | Acertar uma tarefa depois de ter errado |
+| 🔥 Em chamas | 5 acertos seguidos, sem errar no meio |
+| 📚 Dedicação / 🚀 Incansável | 10 / 25 tarefas concluídas |
+| 💡 Ideia aprovada | Ter uma resposta livre aprovada na correção |
+| ⭐ Nível 5 / 🌟 Nível 10 | Chegar ao nível |
+| 🏆 Mundo concluído | Concluir todas as tarefas de um mundo (uma por mundo) |
+| 👋 Simpatia | Mandar um emote para os colegas |
+
+- As regras ficam no servidor (`apps/backend/src/modules/achievements`); a lista, em `packages/shared/src/achievements.ts`.
+- Cada medalha é ganha uma única vez. Medalhas ganhas fora do jogo (ex.: resposta livre aprovada depois) são comemoradas no próximo login.
+- Ao entrar, o jogo também concede as medalhas que o histórico do aluno já garante (útil para quem tinha progresso antes das medalhas existirem).
+- No relatório do mundo, o professor vê quantas medalhas cada aluno tem e, ao clicar no aluno, quais são.
+
 ## Multiplayer
 
 Alunos no mesmo mundo se veem em tempo real:

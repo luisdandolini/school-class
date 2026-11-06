@@ -1,4 +1,5 @@
 import type {
+  EarnedAchievement,
   AdminNpc,
   AdminStudent,
   AdminTask,
@@ -92,6 +93,8 @@ export const api = {
   worldReport: (worldId: string) => request<WorldReport>("GET", `/admin/worlds/${worldId}/report`),
   studentProgress: (worldId: string, studentId: string) =>
     request<StudentTaskProgress[]>("GET", `/admin/worlds/${worldId}/students/${studentId}/progress`),
+  studentAchievements: (worldId: string, studentId: string) =>
+    request<EarnedAchievement[]>("GET", `/admin/worlds/${worldId}/students/${studentId}/achievements`),
 
   reorderTasks: (npcId: string, taskIds: string[]) => request<void>("PUT", `/admin/npcs/${npcId}/tasks/order`, { taskIds }),
 

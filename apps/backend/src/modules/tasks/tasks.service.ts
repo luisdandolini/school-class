@@ -8,6 +8,7 @@ import {
 } from "@school-class/shared";
 import { prisma } from "../../db.js";
 import { Prisma } from "../../generated/prisma/client.js";
+import { awardAchievementsSafely } from "../achievements/achievements.service.js";
 import { toAuthUser } from "../auth/auth.service.js";
 import { hub } from "../realtime/hub.js";
 import { accessibleWorlds } from "../worlds/access.js";
@@ -101,7 +102,8 @@ export async function submitAnswer(user: SessionUser, taskId: string, answer: st
     const u = await prisma.user.findUniqueOrThrow({ where: { id: userId } });
     const leveledUp = xpGained > 0 && levelFromXp(u.xp) > levelFromXp(u.xp - xpGained);
     if (leveledUp) hub.levelUp(userId, levelFromXp(u.xp)); // comemoração para os colegas online
-    return { taskId, outcome, xpGained, leveledUp, user: toAuthUser(u) };
+    const achievements = outcome === "CORRECT" ? await awardAchievementsSafely(userId, { kind: "task-correct", taskId }) : [];
+    return { taskId, outcome, xpGained, leveledUp, user: toAuthUser(u), achievements };
   };
 
   // Já concluída? Não corrige de novo nem dá XP.

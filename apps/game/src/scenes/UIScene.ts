@@ -1,5 +1,6 @@
 import Phaser from "phaser";
-import { EMOTES, type AuthUser, type TaskResult } from "@school-class/shared";
+import { EMOTES, achievementDef, type AuthUser, type EarnedAchievement, type TaskResult } from "@school-class/shared";
+import { api } from "../api/client";
 import { logout } from "../auth/login";
 import { FONT } from "../config";
 import { DialogBox } from "../ui/DialogBox";
@@ -17,6 +18,10 @@ export class UIScene extends Phaser.Scene {
   private emoteButton!: Phaser.GameObjects.Text;
   private emoteMenu!: Phaser.GameObjects.Container;
   private notices: Phaser.GameObjects.Text[] = [];
+  /** Conquistas esperando a vez de serem comemoradas (uma por vez). */
+  private celebrations: EarnedAchievement[] = [];
+  private celebrating = false;
+  private celebrated = new Set<string>();
 
   constructor() {
     super("UI");
@@ -64,10 +69,24 @@ export class UIScene extends Phaser.Scene {
       if (!this.dialog.isOpen) this.events.emit("edit-avatar");
     });
 
+    // Botão "Medalhas".
+    const medals = this.add
+      .text(look.x - look.width - 10, 20, "🏅 Medalhas", {
+        fontFamily: FONT, fontSize: "18px", fontStyle: "bold", color: "#1b1f2a",
+        backgroundColor: "#f6d55c", padding: { x: 14, y: 8 },
+      })
+      .setOrigin(1, 0)
+      .setInteractive({ useHandCursor: true });
+    medals.on("pointerover", () => medals.setBackgroundColor("#ffe27a"));
+    medals.on("pointerout", () => medals.setBackgroundColor("#f6d55c"));
+    medals.on("pointerdown", () => {
+      if (!this.dialog.isOpen) this.events.emit("show-achievements");
+    });
+
     // Botão "Mundos", quando o aluno tem mais de um mundo.
     if ((this.registry.get("worldCount") as number) > 1) {
       const worlds = this.add
-        .text(look.x - look.width - 10, 20, "🗺️ Mundos", {
+        .text(medals.x - medals.width - 10, 20, "🗺️ Mundos", {
           fontFamily: FONT, fontSize: "18px", fontStyle: "bold", color: "#1b1f2a",
           backgroundColor: "#f6d55c", padding: { x: 14, y: 8 },
         })
@@ -174,6 +193,58 @@ export class UIScene extends Phaser.Scene {
     if (result.leveledUp) {
       this.time.delayedCall(900, () => this.toast(`⭐ Subiu para o nível ${result.user.level}!`));
     }
+    // Conquistas depois do aviso de nível (para não ficarem uma em cima da outra).
+    for (const a of result.achievements ?? []) this.celebrate(a, result.leveledUp ? 3800 : 900);
+  }
+
+  /**
+   * Comemora uma conquista (cartão no centro da tela). Várias entram na fila.
+   * Depois de mostrar, avisa o servidor para não repetir no próximo login.
+   */
+  celebrate(a: EarnedAchievement, delayMs = 0) {
+    if (this.celebrated.has(a.key)) return;
+    this.celebrated.add(a.key);
+    this.celebrations.push(a);
+    if (!this.celebrating) {
+      this.celebrating = true;
+      this.time.delayedCall(delayMs, () => this.nextCelebration());
+    }
+  }
+
+  private nextCelebration(): void {
+    const a = this.celebrations.shift();
+    if (!a || !this.sys.isActive()) {
+      this.celebrating = false;
+      return;
+    }
+    const def = achievementDef(a.id);
+    if (!def) return this.nextCelebration();
+    const { width, height } = this.scale;
+    const detail = a.worldName ? `${def.description}\n${a.worldName}` : def.description;
+    const box = this.add.container(width / 2, height * 0.42).setDepth(1001).setAlpha(0).setScale(0.6);
+    const text = this.add
+      .text(0, 0, `🏅 Nova conquista!\n\n${def.icon}  ${def.name}\n${detail}`, {
+        fontFamily: FONT, fontSize: "24px", color: "#ffffff", align: "center", lineSpacing: 6,
+        backgroundColor: "#262b3a", padding: { x: 32, y: 22 }, wordWrap: { width: 520 },
+      })
+      .setOrigin(0.5);
+    const border = this.add.rectangle(0, 0, text.width + 8, text.height + 8).setStrokeStyle(4, 0xf6d55c);
+    box.add([border, text]);
+    this.tweens.chain({
+      targets: box,
+      tweens: [
+        { scale: 1, alpha: 1, duration: 300, ease: "Back.out" },
+        { scale: 1, duration: 2600 },
+        {
+          alpha: 0, y: box.y - 30, duration: 400,
+          onComplete: () => {
+            box.destroy();
+            this.nextCelebration();
+          },
+        },
+      ],
+    });
+    if (!a.seen) void api.markAchievementsSeen([a.key]).catch(() => {});
   }
 
   /** Aviso grande e temporário no centro da tela. */

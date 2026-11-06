@@ -1,6 +1,7 @@
 import { levelFromXp, type PendingReview, type ReviewResult } from "@school-class/shared";
 import { prisma } from "../../db.js";
 import { HttpError } from "../../lib/http-error.js";
+import { awardAchievementsSafely } from "../achievements/achievements.service.js";
 import { hub } from "../realtime/hub.js";
 
 /** Respostas abertas aguardando correção nos mundos do professor (mais antigas primeiro). */
@@ -78,5 +79,7 @@ export async function reviewSubmission(
   if (result.newXp !== null && levelFromXp(result.newXp) > levelFromXp(result.newXp - result.xpGained)) {
     hub.levelUp(sub.userId, levelFromXp(result.newXp));
   }
+  // Resposta aprovada: conquistas (o aluno vê na hora se estiver jogando, ou no próximo login).
+  if (result.xpGained > 0) await awardAchievementsSafely(sub.userId, { kind: "open-approved", taskId: sub.taskId });
   return { id: result.id, correct: result.correct, xpGained: result.xpGained };
 }

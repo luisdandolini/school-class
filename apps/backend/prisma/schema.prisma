@@ -33,13 +33,14 @@ model User {
   /// Professor que cadastrou este aluno (null para professores).
   createdById  String?
 
-  createdBy       User?            @relation("CreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
-  studentsCreated User[]           @relation("CreatedBy")
+  createdBy       User?  @relation("CreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  studentsCreated User[] @relation("CreatedBy")
 
-  enrollments Enrollment[]
-  submissions Submission[]
-  completions TaskCompletion[]
-  worldsOwned World[]      @relation("WorldOwner")
+  enrollments  Enrollment[]
+  submissions  Submission[]
+  completions  TaskCompletion[]
+  achievements Achievement[]
+  worldsOwned  World[]          @relation("WorldOwner")
 }
 
 /// Um "servidor": mundo temático (ex.: "Geografia - 7º ano").
@@ -51,9 +52,10 @@ model World {
   ownerId     String
   createdAt   DateTime @default(now())
 
-  owner       User         @relation("WorldOwner", fields: [ownerId], references: [id])
-  npcs        Npc[]
-  enrollments Enrollment[]
+  owner        User          @relation("WorldOwner", fields: [ownerId], references: [id])
+  npcs         Npc[]
+  enrollments  Enrollment[]
+  achievements Achievement[]
 }
 
 /// Quais alunos participam de quais mundos.
@@ -103,10 +105,10 @@ model Task {
 
 /// Cada resposta enviada por um aluno.
 model Submission {
-  id        String   @id @default(cuid())
-  userId    String
-  taskId    String
-  answer    String
+  id         String    @id @default(cuid())
+  userId     String
+  taskId     String
+  answer     String
   /// null = aguardando correção do professor (tarefas OPEN).
   correct    Boolean?
   xpGained   Int       @default(0)
@@ -134,4 +136,21 @@ model TaskCompletion {
   task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
   @@id([userId, taskId])
+}
+
+/// Conquista (medalha) de um aluno. A chave é o id da conquista, ou "id:mundo"
+/// nas conquistas por mundo — assim cada uma é ganha uma única vez.
+model Achievement {
+  userId   String
+  key      String
+  /// Só nas conquistas por mundo (ex.: "mundo-concluido").
+  worldId  String?
+  earnedAt DateTime  @default(now())
+  /// Quando o aluno viu a comemoração (null = ainda não viu).
+  seenAt   DateTime?
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  world World? @relation(fields: [worldId], references: [id], onDelete: Cascade)
+
+  @@id([userId, key])
 }

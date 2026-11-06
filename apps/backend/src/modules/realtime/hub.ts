@@ -1,5 +1,6 @@
 import {
   EMOTE_IDS,
+  type EarnedAchievement,
   type Avatar,
   WS_CLOSE,
   type EmoteId,
@@ -115,12 +116,14 @@ export class Hub {
     }
   }
 
-  emote(worldId: string, userId: string, emote: EmoteId, now = Date.now()) {
+  /** Retorna true se o emote foi repassado aos colegas. */
+  emote(worldId: string, userId: string, emote: EmoteId, now = Date.now()): boolean {
     const m = this.rooms.get(worldId)?.get(userId);
-    if (!m || !m.ready || !EMOTE_IDS.includes(emote)) return;
-    if (now - m.lastEmoteAt < EMOTE_COOLDOWN_MS) return;
+    if (!m || !m.ready || !EMOTE_IDS.includes(emote)) return false;
+    if (now - m.lastEmoteAt < EMOTE_COOLDOWN_MS) return false;
     m.lastEmoteAt = now;
     this.broadcast(worldId, { t: "emote", id: userId, emote }, userId);
+    return true;
   }
 
   /** Avisa todos os mundos onde o aluno está que ele subiu de nível. */
@@ -130,6 +133,19 @@ export class Hub {
       if (!m) continue;
       m.state.level = level;
       this.broadcast(worldId, { t: "levelup", id: userId, name: m.state.name, level }, userId);
+    }
+  }
+
+  /** Conquistas novas: comemoração para o próprio jogador e aviso para os colegas. */
+  achievements(userId: string, earned: EarnedAchievement[]) {
+    for (const [worldId, room] of this.rooms) {
+      const m = room.get(userId);
+      if (!m) continue;
+      for (const achievement of earned) {
+        const msg: ServerMessage = { t: "achievement", id: userId, name: m.state.name, achievement };
+        m.conn.send(msg);
+        this.broadcast(worldId, msg, userId);
+      }
     }
   }
 

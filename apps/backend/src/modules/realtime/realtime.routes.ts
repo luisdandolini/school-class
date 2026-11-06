@@ -4,6 +4,7 @@ import { DEFAULT_AVATAR, EMOTE_IDS, MAPS, WS_CLOSE, levelFromXp, parseAvatar, ty
 import type { WebSocket } from "ws";
 import { z } from "zod";
 import { prisma } from "../../db.js";
+import { awardAchievementsSafely } from "../achievements/achievements.service.js";
 import { accessibleWorlds } from "../worlds/access.js";
 import { hub, type Connection } from "./hub.js";
 
@@ -81,6 +82,7 @@ export async function realtimeRoutes(app: FastifyInstance) {
     });
     socket.on("close", () => hub.leave(world.id, user.id, conn));
 
+    let emoteChecked = false;
     handle = (raw) => {
       let data: unknown;
       try {
@@ -93,8 +95,9 @@ export async function realtimeRoutes(app: FastifyInstance) {
       if (msg.data.t === "move") {
         const { x, y, facing, moving } = msg.data;
         hub.move(world.id, user.id, x, y, facing, moving);
-      } else {
-        hub.emote(world.id, user.id, msg.data.emote);
+      } else if (hub.emote(world.id, user.id, msg.data.emote) && !emoteChecked) {
+        emoteChecked = true; // a conquista "Simpatia" só precisa ser conferida uma vez por conexão
+        void awardAchievementsSafely(user.id, { kind: "emote" });
       }
     };
     queue.splice(0).forEach(handle);

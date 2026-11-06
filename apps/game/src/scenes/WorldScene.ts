@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { EMOTES, WS_CLOSE, type AuthUser, type NpcTask, type RemotePlayerState, type ServerMessage, type TaskResult, type WorldDetail } from "@school-class/shared";
+import { EMOTES, WS_CLOSE, achievementDef, type AuthUser, type NpcTask, type RemotePlayerState, type ServerMessage, type TaskResult, type WorldDetail } from "@school-class/shared";
 import { api, ApiError } from "../api/client";
 import { AVATAR_BASE, ensureAvatarTexture } from "../avatar";
 import { DEPTH, FONT, INTERACT_DISTANCE, WORLD_ZOOM } from "../config";
@@ -7,6 +7,7 @@ import { Npc } from "../entities/Npc";
 import { Player } from "../entities/Player";
 import { RemotePlayer } from "../entities/RemotePlayer";
 import { Realtime } from "../net/Realtime";
+import { showAchievements } from "../ui/achievementsPanel";
 import { editAvatar } from "../ui/avatarCreator";
 import { showBubble } from "../ui/bubble";
 import type { UIScene } from "./UIScene";
@@ -67,6 +68,9 @@ export class WorldScene extends Phaser.Scene {
     EMOTES.forEach((e, i) => this.input.keyboard!.addKey(digits[i]).on("down", () => this.sendEmote(i)));
     this.ui.events.on("emote", (i: number) => this.sendEmote(i));
     this.ui.events.on("edit-avatar", () => void this.changeAvatar());
+    this.ui.events.on("show-achievements", () => void this.openAchievements());
+    // Conquistas ganhas enquanto o aluno estava fora (ex.: resposta livre aprovada).
+    this.ui.events.once(Phaser.Scenes.Events.CREATE, () => void this.celebrateUnseen());
 
     this.connectRealtime(world.id);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.realtime?.destroy());
@@ -115,6 +119,15 @@ export class WorldScene extends Phaser.Scene {
     rt.on("avatar", (m: Extract<ServerMessage, { t: "avatar" }>) => {
       this.remotes.get(m.id)?.setSkin(ensureAvatarTexture(this, m.avatar));
     });
+    rt.on("achievement", (m: Extract<ServerMessage, { t: "achievement" }>) => {
+      const user = this.registry.get("user") as AuthUser;
+      if (m.id === user.id) return this.ui.celebrate(m.achievement, 900);
+      const def = achievementDef(m.achievement.id);
+      if (!def) return;
+      const r = this.remotes.get(m.id);
+      if (r) showBubble(this, r, def.icon);
+      this.ui.notify(`🏅 ${m.name} ganhou a medalha “${def.name}”!`);
+    });
     rt.on("status", countOnline);
     // A interface é criada logo depois desta cena: atualiza o contador quando ela estiver pronta.
     this.ui.events.once(Phaser.Scenes.Events.CREATE, countOnline);
@@ -130,6 +143,27 @@ export class WorldScene extends Phaser.Scene {
       this.ui.setOnline(null, false);
     });
     countOnline();
+  }
+
+  private async celebrateUnseen() {
+    try {
+      const list = await api.achievements();
+      list.filter((a) => !a.seen).forEach((a) => this.ui.celebrate(a, 1200));
+    } catch {
+      /* sem conquistas agora: tudo bem */
+    }
+  }
+
+  /** Botão "🏅 Medalhas". */
+  private async openAchievements() {
+    if (this.talkingTo || this.player.frozen) return;
+    this.player.frozen = true;
+    try {
+      const list = await api.achievements().catch(() => []);
+      await this.withKeyboardPaused(() => showAchievements(list));
+    } finally {
+      this.player.frozen = false;
+    }
   }
 
   private addRemote(state: RemotePlayerState) {

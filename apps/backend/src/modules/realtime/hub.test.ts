@@ -125,4 +125,19 @@ describe("Hub (salas do tempo real)", () => {
     hub.join(W, { id: "carol", name: "Carol", level: 1, avatar: AV }, carol.conn, bounds);
     expect(carol.sent[0]).toMatchObject({ players: expect.arrayContaining([expect.objectContaining({ id: "ana", avatar: novo })]) });
   });
+
+  it("conquista: comemoração para quem ganhou e aviso para os colegas", () => {
+    const { hub, ana, bia } = setup();
+    hub.move(W, "bia", 50, 60, "left", true, 1000);
+    const a = { key: "em-chamas", id: "em-chamas" as const, worldId: null, worldName: null, earnedAt: "x", seen: false };
+    hub.achievements("ana", [a]);
+    expect(ana.last()).toEqual({ t: "achievement", id: "ana", name: "Ana", achievement: a });
+    expect(bia.last()).toEqual({ t: "achievement", id: "ana", name: "Ana", achievement: a });
+  });
+
+  it("emote informa se foi repassado", () => {
+    const { hub } = setup();
+    expect(hub.emote(W, "ana", "oi", 10_000)).toBe(true);
+    expect(hub.emote(W, "ana", "oi", 10_100)).toBe(false); // cedo demais
+  });
 });

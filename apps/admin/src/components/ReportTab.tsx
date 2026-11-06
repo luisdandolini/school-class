@@ -1,6 +1,6 @@
 import { AvatarIcon } from "./AvatarIcon";
 import { useState } from "react";
-import type { AdminWorld, StudentReportRow } from "@school-class/shared";
+import { achievementDef, type AdminWorld, type StudentReportRow } from "@school-class/shared";
 import { api } from "../api";
 import { percent, timeAgo } from "../format";
 import { useAsync } from "../useAsync";
@@ -44,7 +44,7 @@ export function ReportTab({ world }: { world: AdminWorld }) {
       <div className="table-wrap">
         <table className="table">
           <thead>
-            <tr><th>Aluno</th><th>Progresso</th><th>Erros</th><th>Aguardando</th><th>Nível</th><th>Última atividade</th></tr>
+            <tr><th>Aluno</th><th>Progresso</th><th>Erros</th><th>Aguardando</th><th>Nível</th><th>Medalhas</th><th>Última atividade</th></tr>
           </thead>
           <tbody>
             {students.map((s) => (
@@ -59,6 +59,7 @@ export function ReportTab({ world }: { world: AdminWorld }) {
                 <td>{s.wrongAttempts}</td>
                 <td>{s.pendingReview > 0 ? <span className="chip chip-warn">{s.pendingReview}</span> : "—"}</td>
                 <td><span className="level">Nv. {s.level}</span> <span className="muted small">{s.xp} XP</span></td>
+                <td>{s.achievements > 0 ? `🏅 ${s.achievements}` : <span className="muted">—</span>}</td>
                 <td className="muted">{timeAgo(s.lastActivity)}</td>
               </tr>
             ))}
@@ -109,8 +110,25 @@ const STATUS_LABEL = { COMPLETED: "✅ Concluída", PENDING_REVIEW: "⏳ Aguarda
 
 function StudentProgressDialog({ world, student, onClose }: { world: AdminWorld; student: StudentReportRow; onClose: () => void }) {
   const progress = useAsync(() => api.studentProgress(world.id, student.id), [world.id, student.id]);
+  const medals = useAsync(() => api.studentAchievements(world.id, student.id), [world.id, student.id]);
   return (
     <Modal title={`${student.name} em ${world.name}`} onClose={onClose} wide footer={<button className="btn btn-primary" onClick={onClose}>Fechar</button>}>
+      {medals.data && (
+        <div className="medal-row" aria-label="Medalhas">
+          {medals.data.length === 0 ? (
+            <span className="muted small">Ainda sem medalhas.</span>
+          ) : (
+            medals.data.map((m) => {
+              const def = achievementDef(m.id);
+              return def ? (
+                <span key={m.key} className="chip medal-chip" title={def.description}>
+                  {def.icon} {def.name}{m.worldName ? ` — ${m.worldName}` : ""}
+                </span>
+              ) : null;
+            })
+          )}
+        </div>
+      )}
       {progress.loading && !progress.data ? (
         <p className="muted">Carregando...</p>
       ) : (

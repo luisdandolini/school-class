@@ -339,3 +339,7 @@ ul, ol { padding-left: 20px; }
 .map-option input { position: absolute; opacity: 0; pointer-events: none; }
 .map-option .map-picker canvas { border-radius: 6px; }
 .hint.warn { color: #8a5a00; background: #fff6dc; border: 1px solid #f1d58a; padding: 8px 10px; border-radius: 8px; }
+
+/* Medalhas do aluno (relatório) */
+.medal-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.medal-chip { background: #fff6dc; color: #6b4a00; border: 1px solid #f1d58a; }
