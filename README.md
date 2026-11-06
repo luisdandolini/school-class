@@ -155,14 +155,18 @@ A arte é provisória e gerada por código (sem licenças de terceiros):
 
 ```bash
 pnpm --filter @school-class/game assets       # gera tiles.png, avatar-base.png, npc.png...
-pnpm --filter @school-class/game map:starter  # gera o mapa inicial (sobrescreve!)
+pnpm --filter @school-class/game maps         # gera todos os mapas (sobrescreve!)
+pnpm --filter @school-class/game maps praia   # gera só um mapa
 ```
 
+- Cenários disponíveis: **Vila Inicial**, **Escola** (sala de aula, biblioteca e corredor), **Floresta** (trilha, rio e clareiras) e **Praia** (casinha, coqueiros, mar e píer). O professor escolhe o cenário ao criar ou editar um mundo, vendo uma prévia de cada um.
+- Ao trocar o cenário de um mundo que já tem NPCs, eles mantêm a posição; se algum ficar em cima de um obstáculo, o painel avisa e mostra um contorno vermelho no mapa.
+- Cada mapa é gerado por um script em `apps/game/scripts/maps/<nome>.mjs` (as ferramentas comuns ficam em `lib.mjs`).
 - Os mapas ficam em `apps/game/public/assets/maps/` no formato do **[Tiled](https://www.mapeditor.org)** e podem ser abertos e editados nele.
   Camadas: `Chao`, `Objetos` (colide), `Topo` (desenhada por cima do jogador) e `Pontos` (objeto `spawn`).
 - Tiles com a propriedade `collides = true` bloqueiam a passagem.
 - Para trocar a arte, basta substituir os PNGs mantendo o layout (tiles 16x16; personagens com 3 quadros x 4 direções: baixo, esquerda, direita, cima).
-- Cada mundo no banco tem um `mapKey`, que é o nome do arquivo do mapa. **Para um mapa novo aparecer no painel**, registre-o em `packages/shared/src/content.ts` (`MAPS`, com nome, largura e altura).
+- Cada mundo no banco tem um `mapKey`, que é o nome do arquivo do mapa. **Para um mapa novo aparecer no painel**, registre-o em `packages/shared/src/content.ts` (`MAPS`, com nome, descrição, largura e altura) e, se for gerado por script, em `scripts/generate-maps.mjs`.
 - Aparências de NPC disponíveis ficam em `NPC_SPRITES` (mesmo arquivo).
 - Para um penteado novo: desenhe-o em `HAIR_STYLES` no gerador de arte e acrescente o nome em `HAIR_STYLES` de `packages/shared/src/avatar.ts` (mesma ordem).
 

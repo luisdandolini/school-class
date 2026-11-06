@@ -323,3 +323,19 @@ ul, ol { padding-left: 20px; }
 .avatar-icon { image-rendering: pixelated; vertical-align: middle; flex-shrink: 0; }
 .avatar-icon-empty { opacity: 0.35; filter: grayscale(1); }
 .name-cell { display: inline-flex; align-items: center; gap: 8px; }
+
+/* Escolha do cenário do mundo */
+.map-choice { border: 0; margin: 4px 0 0; padding: 0; min-width: 0; }
+.map-choice legend { font-weight: 600; margin-bottom: 6px; padding: 0; }
+.map-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 640px) { .map-options { grid-template-columns: minmax(0, 1fr); } }
+.map-option {
+  display: flex; flex-direction: column; gap: 4px; min-width: 0;
+  position: relative; padding: 8px; border: 2px solid var(--border); border-radius: var(--radius); cursor: pointer; background: var(--surface);
+}
+.map-option:hover { border-color: var(--muted); }
+.map-option.selected { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(47, 95, 208, 0.15); }
+.map-option:focus-within { outline: 3px solid rgba(47, 95, 208, 0.4); outline-offset: 2px; }
+.map-option input { position: absolute; opacity: 0; pointer-events: none; }
+.map-option .map-picker canvas { border-radius: 6px; }
+.hint.warn { color: #8a5a00; background: #fff6dc; border: 1px solid #f1d58a; padding: 8px 10px; border-radius: 8px; }

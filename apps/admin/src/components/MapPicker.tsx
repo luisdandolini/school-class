@@ -73,6 +73,25 @@ function loadMap(mapKey: string, spriteKeys: string[]): Promise<LoadedMap> {
   return cache.get(key)!;
 }
 
+/**
+ * NPCs que estão em cima de um obstáculo (ou do ponto de partida) neste mapa —
+ * acontece quando o professor troca o mapa de um mundo que já tem NPCs.
+ */
+export function useBlockedNpcs<N extends Pick<AdminNpc, "id" | "x" | "y">>(mapKey: string, npcs: N[]): N[] {
+  const [blocked, setBlocked] = useState<Map<string, string> | null>(null);
+  useEffect(() => {
+    let alive = true;
+    loadMap(mapKey, []).then(
+      (m) => alive && setBlocked(m.blocked),
+      () => {},
+    );
+    return () => {
+      alive = false;
+    };
+  }, [mapKey]);
+  return blocked ? npcs.filter((n) => blocked.has(`${n.x},${n.y}`)) : [];
+}
+
 interface MapPickerProps {
   mapKey: string;
   npcs: Pick<AdminNpc, "id" | "name" | "sprite" | "x" | "y">[];
@@ -86,10 +105,12 @@ interface MapPickerProps {
   editingNpcId?: string;
   /** Aparência mostrada na posição escolhida. */
   previewSprite?: string;
+  /** Só a imagem, sem a linha de ajuda (ex.: prévia na escolha do mapa). */
+  compact?: boolean;
 }
 
 /** Mapa do mundo desenhado com a arte do jogo; permite escolher a posição de um NPC. */
-export function MapPicker({ mapKey, npcs, value, onPick, onNpcClick, editingNpcId, previewSprite }: MapPickerProps) {
+export function MapPicker({ mapKey, npcs, value, onPick, onNpcClick, editingNpcId, previewSprite, compact }: MapPickerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [loaded, setLoaded] = useState<LoadedMap | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -157,6 +178,8 @@ export function MapPicker({ mapKey, npcs, value, onPick, onNpcClick, editingNpcI
       ctx.strokeRect(x * T + 0.5, y * T + 0.5, T - 1, T - 1);
     };
     if (value) outline(value.x, value.y, "#f6d55c");
+    // NPC em cima de obstáculo (o mapa do mundo foi trocado): contorno vermelho.
+    for (const n of others) if (loaded.blocked.has(`${n.x},${n.y}`)) outline(n.x, n.y, "#e5484d");
     if (hover && onPick) {
       const bad = statusOf(hover.x, hover.y);
       ctx.fillStyle = bad ? "rgba(220,60,60,0.35)" : "rgba(255,255,255,0.3)";
@@ -199,7 +222,7 @@ export function MapPicker({ mapKey, npcs, value, onPick, onNpcClick, editingNpcI
         aria-label="Mapa do mundo"
       />
       {!loaded && <div className="map-loading">Carregando mapa...</div>}
-      <p className="map-status" aria-live="polite">
+      {!compact && <p className="map-status" aria-live="polite">
         {hover
           ? hoverNpc && onNpcClick
             ? `${hoverNpc.name} — clique para abrir`
@@ -215,7 +238,7 @@ export function MapPicker({ mapKey, npcs, value, onPick, onNpcClick, editingNpcI
             : onNpcClick
               ? "Clique num NPC para ver as tarefas dele."
               : ""}
-      </p>
+      </p>}
     </div>
   );
 }

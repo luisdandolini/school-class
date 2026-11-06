@@ -2,10 +2,13 @@ import type { TaskType } from "./task.js";
 
 /**
  * Mapas disponíveis. Cada um corresponde a apps/game/public/assets/maps/<chave>.json.
- * Para adicionar um mapa: crie o arquivo no Tiled e registre aqui.
+ * Para adicionar um mapa: gere-o (apps/game/scripts/generate-maps.mjs) ou crie no Tiled, e registre aqui.
  */
 export const MAPS = {
-  starter: { name: "Vila Inicial", width: 30, height: 20 },
+  starter: { name: "Vila Inicial", description: "Vila com lago, casa e caminhos.", width: 30, height: 20 },
+  escola: { name: "Escola", description: "Sala de aula com lousa, biblioteca e corredor.", width: 30, height: 20 },
+  floresta: { name: "Floresta", description: "Trilha entre pinheiros, rio e clareiras.", width: 30, height: 20 },
+  praia: { name: "Praia", description: "Areia com coqueiros, casinha, mar e píer.", width: 30, height: 20 },
 } as const;
 export type MapKey = keyof typeof MAPS;
 export const MAP_KEYS = Object.keys(MAPS) as MapKey[];

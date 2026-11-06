@@ -4,7 +4,7 @@ import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import { MAPS, type AdminStudent, type AdminWorld, type AdminWorldDetail, type MapKey } from "@school-class/shared";
 import { api, errorMessage } from "../api";
 import { ConfirmDialog } from "../components/ConfirmDialog";
-import { MapPicker } from "../components/MapPicker";
+import { MapPicker, useBlockedNpcs } from "../components/MapPicker";
 import { Modal } from "../components/Modal";
 import { NpcForm } from "../components/NpcForm";
 import { ReportTab } from "../components/ReportTab";
@@ -83,6 +83,7 @@ export function WorldPage() {
         <WorldForm
           title="Editar mundo"
           initial={{ name: w.name, description: w.description, mapKey: w.mapKey as MapKey }}
+          npcCount={w.npcs.length}
           onClose={() => setDialog(null)}
           onSubmit={async (data) => {
             await api.updateWorld(w.id, data);
@@ -129,11 +130,18 @@ export function WorldPage() {
 function ContentTab({ world, onNewNpc }: { world: AdminWorldDetail; onNewNpc: () => void }) {
   const navigate = useNavigate();
   const open = (npcId: string) => navigate(`/mundos/${world.id}/npcs/${npcId}`);
+  const blocked = useBlockedNpcs(world.mapKey, world.npcs);
 
   return (
     <div className="content-grid">
       <section>
         <MapPicker mapKey={world.mapKey} npcs={world.npcs} onNpcClick={open} />
+        {blocked.length > 0 && (
+          <p className="hint warn" role="status">
+            ⚠️ {blocked.map((n) => n.name).join(", ")} {blocked.length === 1 ? "está" : "estão"} em cima de um obstáculo deste mapa
+            (contorno vermelho) — os alunos podem não conseguir chegar. Abra o NPC e escolha outra posição.
+          </p>
+        )}
       </section>
       <section>
         <div className="section-head">

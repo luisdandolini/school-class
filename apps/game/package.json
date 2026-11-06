@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "assets": "node scripts/generate-assets.mjs",
-    "map:starter": "node scripts/generate-starter-map.mjs"
+    "maps": "node scripts/generate-maps.mjs"
   },
   "dependencies": {
     "@school-class/shared": "workspace:*",

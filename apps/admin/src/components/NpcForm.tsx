@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { LIMITS, NPC_SPRITES, type AdminNpc, type NpcInput, type NpcSprite } from "@school-class/shared";
 import { errorMessage } from "../api";
-import { MapPicker } from "./MapPicker";
+import { MapPicker, useBlockedNpcs } from "./MapPicker";
 import { Modal } from "./Modal";
 import { SpriteIcon } from "./SpriteIcon";
 
@@ -22,6 +22,8 @@ export function NpcForm({ title, mapKey, npcs, npc, onClose, onSubmit }: NpcForm
   const [pos, setPos] = useState<{ x: number; y: number } | null>(npc ? { x: npc.x, y: npc.y } : null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Posição atual em cima de um obstáculo (o mapa do mundo foi trocado)?
+  const posBlocked = useBlockedNpcs(mapKey, pos ? [{ id: "pos", ...pos }] : []).length > 0;
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -29,6 +31,7 @@ export function NpcForm({ title, mapKey, npcs, npc, onClose, onSubmit }: NpcForm
     if (!name.trim()) return setError("Dê um nome ao NPC.");
     if (!greeting.trim()) return setError("Escreva a fala de boas-vindas.");
     if (!pos) return setError("Escolha a posição do NPC clicando no mapa.");
+    if (posBlocked) return setError("A posição atual está em cima de um obstáculo. Clique num lugar livre do mapa.");
     setBusy(true);
     try {
       await onSubmit({ name, greeting, sprite, ...pos });
@@ -89,6 +92,7 @@ export function NpcForm({ title, mapKey, npcs, npc, onClose, onSubmit }: NpcForm
             editingNpcId={npc?.id}
             previewSprite={sprite}
           />
+          {posBlocked && <p className="hint warn">⚠️ Neste mapa, a posição atual fica em cima de um obstáculo. Escolha outro lugar.</p>}
         </div>
         {error && <p className="form-error npc-form-error" role="alert">{error}</p>}
       </form>

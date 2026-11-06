@@ -126,7 +126,11 @@ const C = {
 //  4 água*        5 copa (topo)     6 árvore (base)*   7 arbusto*
 //  8 telhado esq* 9 telhado meio*  10 telhado dir*    11 parede*
 // 12 janela*     13 porta*         14 cerca*          15 pedra*
-// (* = colide)
+// 16 piso madeira 17 tapete         18 parede interna* 19 lousa*
+// 20 carteira*    21 estante*        22 vaso*           23 piso azulejo
+// 24 areia        25 areia c/ conchas 26 mar*           27 coqueiro (base)*
+// 28 coqueiro (topo) 29 grama escura 30 pinheiro (base)* 31 pinheiro (topo)
+// (* = colide — a lista fica em scripts/maps/lib.mjs)
 
 function grass(png, ox, oy, seed) {
   const r = rng(seed);
@@ -156,7 +160,7 @@ function flower(png, x, y, petal) {
 }
 
 function buildTileset() {
-  const png = image(T * 8, T * 2);
+  const png = image(T * 8, T * 4);
   const at = (i) => [(i % 8) * T, Math.floor(i / 8) * T];
 
   // 0 grama
@@ -377,7 +381,331 @@ function buildTileset() {
     blit(s, png, x, y);
   }
 
+  buildIndoorTiles(png, at);
+  buildBeachTiles(png, at);
+  buildForestTiles(png, at);
   save(png, "tiles.png");
+}
+
+// ---------- tiles da escola (16-23) ----------
+const W2 = {
+  wood: [196, 146, 92], woodDark: [160, 112, 66], woodLight: [216, 170, 116],
+  rug: [176, 62, 72], rugDark: [138, 42, 54], rugLight: [226, 196, 96],
+  wallTop: [238, 228, 200], wallTopDark: [214, 202, 170], wainscot: [86, 140, 110], wainscotDark: [62, 108, 82],
+  board: [44, 92, 66], chalk: [226, 240, 228],
+  pot: [190, 100, 64], potDark: [146, 72, 44],
+  tileA: [226, 230, 236], tileB: [198, 204, 214],
+};
+
+function woodFloor(png, x, y, seed) {
+  const r = rng(seed);
+  rect(png, x, y, T, T, W2.wood);
+  for (let row = 0; row < T; row += 4) {
+    rect(png, x, y + row + 3, T, 1, W2.woodDark);
+    const seam = (row / 4) % 2 ? 4 : 11;
+    rect(png, x + seam, y + row, 1, 3, W2.woodDark);
+  }
+  for (let j = 0; j < T; j++) for (let i = 0; i < T; i++) if (r() < 0.05) px(png, x + i, y + j, W2.woodLight);
+}
+
+function buildIndoorTiles(png, at) {
+  // 16 piso de madeira
+  woodFloor(png, ...at(16), 16);
+
+  // 17 tapete (dá para andar)
+  {
+    const [x, y] = at(17);
+    rect(png, x, y, T, T, W2.rug);
+    rect(png, x, y, T, 1, W2.rugDark);
+    rect(png, x, y + T - 1, T, 1, W2.rugDark);
+    for (let i = 1; i < T; i += 4) {
+      px(png, x + i, y + 3, W2.rugLight);
+      px(png, x + i + 2, y + 12, W2.rugLight);
+    }
+    for (let i = 0; i < T; i += 2) px(png, x + i, y + 7 + (i % 4 ? 1 : 0), W2.rugDark);
+  }
+
+  // 18 parede interna: parte de cima clara, rodapé verde
+  {
+    const [x, y] = at(18);
+    rect(png, x, y, T, 9, W2.wallTop);
+    for (let i = 2; i < T; i += 5) rect(png, x + i, y + 2, 1, 5, W2.wallTopDark);
+    rect(png, x, y + 9, T, 7, W2.wainscot);
+    rect(png, x, y + 9, T, 1, W2.wainscotDark);
+    for (let i = 3; i < T; i += 6) rect(png, x + i, y + 11, 1, 4, W2.wainscotDark);
+    rect(png, x, y + T - 1, T, 1, C.outline);
+  }
+
+  // 19 lousa (sobre a parede)
+  {
+    const [x, y] = at(19);
+    rect(png, x, y, T, 9, W2.wallTop);
+    rect(png, x, y + 9, T, 7, W2.wainscot);
+    rect(png, x, y + 9, T, 1, W2.wainscotDark);
+    rect(png, x, y + T - 1, T, 1, C.outline);
+    rect(png, x, y + 1, T, 11, C.frame);
+    rect(png, x, y + 2, T, 9, W2.board);
+    // "giz": uma conta e um rabisco
+    pattern(png, x + 2, y + 3, ["C.C.CC", ".C..C.", "C.C.CC"], { C: W2.chalk });
+    rect(png, x + 10, y + 5, 4, 1, W2.chalk);
+    rect(png, x + 9, y + 8, 3, 1, W2.chalk);
+  }
+
+  // 20 carteira (fundo transparente: vai sobre o piso)
+  {
+    const [x, y] = at(20);
+    const d = image(T, T);
+    pattern(
+      d, 0, 0,
+      [
+        "................",
+        "................",
+        "................",
+        "................",
+        "..TTTTTTTTTTTT..",
+        "..TLLLLLLLLLLT..",
+        "..TLLLLWWWLLLT..",
+        "..TLLLLWWWLLLT..",
+        "..TTTTTTTTTTTT..",
+        "..DDDDDDDDDDDD..",
+        "...D........D...",
+        "...D........D...",
+        "...D........D...",
+        "...D........D...",
+        "................",
+        "................",
+      ],
+      { T: C.frame, L: W2.woodLight, W: C.white, D: W2.woodDark },
+    );
+    outline(d, 0, 0, T, T, C.outline);
+    blit(d, png, x, y);
+  }
+
+  // 21 estante com livros
+  {
+    const [x, y] = at(21);
+    const b = image(T, T);
+    const books = [C.red, [72, 120, 200], C.yellow, [90, 170, 100], [150, 90, 180]];
+    rect(b, 1, 0, 14, T, C.frame);
+    for (const shelf of [1, 6, 11]) {
+      rect(b, 2, shelf, 12, 4, W2.woodDark);
+      for (let i = 0; i < 6; i++) {
+        const h = 3 + ((i + shelf) % 2);
+        rect(b, 2 + i * 2, shelf + 4 - h, 2, h, books[(i + shelf) % books.length]);
+      }
+    }
+    outline(b, 0, 0, T, T, C.outline);
+    blit(b, png, x, y);
+  }
+
+  // 22 vaso de planta
+  {
+    const [x, y] = at(22);
+    const v = image(T, T);
+    pattern(
+      v, 0, 0,
+      [
+        "................",
+        "......L.L.......",
+        "....LGGLGGL.....",
+        "...GGLGGGLGG....",
+        "..GGGGGLGGGGG...",
+        "..GLGGGGGGLGG...",
+        "...GGGDGDGGG....",
+        "....DGGGGGD.....",
+        "......GGG.......",
+        "....PPPPPPP.....",
+        "....PPPPPPP.....",
+        ".....PPPPP......",
+        ".....pPPPp......",
+        "......ppp.......",
+        "................",
+        "................",
+      ],
+      { G: C.leaf, L: C.leafLight, D: C.leafDark, P: W2.pot, p: W2.potDark },
+    );
+    outline(v, 0, 0, T, T, C.outline);
+    blit(v, png, x, y);
+  }
+
+  // 23 piso de azulejo (corredor)
+  {
+    const [x, y] = at(23);
+    for (let j = 0; j < 2; j++)
+      for (let i = 0; i < 2; i++) rect(png, x + i * 8, y + j * 8, 8, 8, (i + j) % 2 ? W2.tileB : W2.tileA);
+    rect(png, x, y + 7, T, 1, W2.tileB);
+  }
+}
+
+// ---------- tiles da praia (24-28) ----------
+const B = {
+  sand: [236, 214, 160], sandDark: [214, 188, 132], sandLight: [248, 232, 190],
+  sea: [44, 116, 190], seaDark: [34, 92, 160], foam: [222, 240, 250],
+  palm: [150, 110, 60], palmDark: [112, 80, 40],
+  shell: [246, 186, 196], shellDark: [210, 140, 156],
+};
+
+function sand(png, x, y, seed) {
+  const r = rng(seed);
+  rect(png, x, y, T, T, B.sand);
+  for (let j = 0; j < T; j++)
+    for (let i = 0; i < T; i++) {
+      const v = r();
+      if (v < 0.07) px(png, x + i, y + j, B.sandDark);
+      else if (v < 0.11) px(png, x + i, y + j, B.sandLight);
+    }
+}
+
+function buildBeachTiles(png, at) {
+  sand(png, ...at(24), 24);
+  {
+    const [x, y] = at(25);
+    sand(png, x, y, 25);
+    pattern(png, x + 3, y + 4, [".SS.", "SsSs", ".ss."], { S: B.shell, s: B.shellDark });
+    pattern(png, x + 10, y + 10, ["SS", "sS"], { S: B.shell, s: B.shellDark });
+    px(png, x + 11, y + 3, C.white);
+  }
+  {
+    const [x, y] = at(26);
+    const r = rng(26);
+    rect(png, x, y, T, T, B.sea);
+    for (let j = 0; j < T; j++) for (let i = 0; i < T; i++) if (r() < 0.1) px(png, x + i, y + j, B.seaDark);
+    for (const [wx, wy] of [[1, 2], [8, 7], [3, 12], [11, 14]]) {
+      rect(png, x + wx, y + wy, 4, 1, B.foam);
+      px(png, x + wx + 4, y + wy + 1, B.foam);
+    }
+  }
+  // 27 coqueiro (tronco) e 28 copa — fundo transparente
+  {
+    const [bx, by] = at(27);
+    const t = image(T, T);
+    pattern(
+      t, 0, 0,
+      [
+        "......TT........",
+        "......TT........",
+        "......TT........",
+        "......TT........",
+        ".......Tt.......",
+        ".......Tt.......",
+        "........Tt......",
+        "........Tt......",
+        "........Tt......",
+        ".......Tt.......",
+        ".......Tt.......",
+        "......TTtt......",
+        ".....TTTttt.....",
+        "................",
+        "................",
+        "................",
+      ],
+      { T: B.palm, t: B.palmDark },
+    );
+    outline(t, 0, 0, T, T, C.outline);
+    blit(t, png, bx, by);
+
+    const [tx, ty] = at(28);
+    const c = image(T, T);
+    pattern(
+      c, 0, 0,
+      [
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "......GGGG......",
+        "...GGGLLLLGGG...",
+        "..GLLGGGGGGLLG..",
+        ".GL.GGGTTGGG.LG.",
+        "GL..GG.TT.GG..LG",
+        "G..GG..GG..GG..G",
+        "..GL...GG...LG..",
+        ".GL....GG....LG.",
+        ".G.....G......G.",
+      ],
+      { G: C.leaf, L: C.leafLight, T: B.palm },
+    );
+    outline(c, 0, 0, T, T, C.outline);
+    blit(c, png, tx, ty);
+  }
+}
+
+// ---------- tiles da floresta (29-31) ----------
+const F2 = { grass: [76, 134, 64], grassDark: [60, 114, 52], grassLight: [96, 156, 78], pine: [36, 104, 74], pineDark: [24, 78, 56], pineLight: [62, 136, 96] };
+
+function buildForestTiles(png, at) {
+  {
+    const [x, y] = at(29);
+    const r = rng(29);
+    rect(png, x, y, T, T, F2.grass);
+    for (let j = 0; j < T; j++)
+      for (let i = 0; i < T; i++) {
+        const v = r();
+        if (v < 0.14) px(png, x + i, y + j, F2.grassDark);
+        else if (v < 0.18) px(png, x + i, y + j, F2.grassLight);
+      }
+  }
+  // 30 pinheiro (base) e 31 (copa) — fundo transparente
+  const pal = { G: F2.pine, D: F2.pineDark, L: F2.pineLight, T: C.trunk, t: C.trunkDark };
+  {
+    const [tx, ty] = at(31);
+    const c = image(T, T);
+    pattern(
+      c, 0, 0,
+      [
+        "................",
+        ".......L........",
+        "......LGG.......",
+        ".....LGGGG......",
+        "....LGGGGGD.....",
+        "......GGG.......",
+        ".....LGGGGD.....",
+        "....LGGGGGGD....",
+        "...LGGGGGGGGD...",
+        ".....GGGGGG.....",
+        "....LGGGGGGD....",
+        "...LGGGGGGGGD...",
+        "..LGGGGGGGGGGD..",
+        ".LGGGGGGGGGGGGD.",
+        "..GGGGGGGGGGGG..",
+        "...GGGGGGGGGG...",
+      ],
+      pal,
+    );
+    outline(c, 0, 0, T, T, C.outline);
+    blit(c, png, tx, ty);
+  }
+  {
+    const [bx, by] = at(30);
+    const b = image(T, T);
+    pattern(
+      b, 0, 0,
+      [
+        "..LGGGGGGGGGGD..",
+        ".LGGGGGGGGGGGGD.",
+        "LGGGGGGGGGGGGGGD",
+        ".DDDGGGGGGGGDDD.",
+        "....DDDDDDDD....",
+        "......TtTT......",
+        "......TtTT......",
+        "......TtTT......",
+        ".....TTtTTT.....",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+        "................",
+      ],
+      pal,
+    );
+    outline(b, 0, 0, T, T, C.outline);
+    blit(b, png, bx, by);
+  }
 }
 
 /** Copia uma imagem por cima de outra respeitando transparência. */
